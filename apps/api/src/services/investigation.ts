@@ -36,35 +36,43 @@ export function buildInvestigation(
     registrationExpiryStatus,
   };
 
+  if (!extracted.category?.trim()) {
+    return {
+      ...base, status: 'INSUFFICIENT_EVIDENCE', findings: [],
+      summary: `The product category could not be read from the image.${expirySummary}`,
+      recommendedActions: ['Capture a clearer image showing the product label.', ...expiryActions],
+    };
+  }
+
   if (!categorySupported) {
     return {
       ...base, status: 'INSUFFICIENT_EVIDENCE', findings: [],
-      summary: 'Registration verification is not supported for this product category.',
-      recommendedActions: ['Use the regulator or reference source appropriate for this product category.'],
+      summary: `Registration verification is not supported for this product category.${expirySummary}`,
+      recommendedActions: ['Use the regulator or reference source appropriate for this product category.', ...expiryActions],
     };
   }
 
   if (!extracted.nafdacNumber?.trim()) {
     return {
       ...base, status: 'INSUFFICIENT_EVIDENCE', findings: [],
-      summary: 'No readable NAFDAC registration number was available for lookup.',
-      recommendedActions: ['Capture a clearer image showing the registration number.'],
+      summary: `No readable NAFDAC registration number was available for lookup.${expirySummary}`,
+      recommendedActions: ['Capture a clearer image showing the registration number.', ...expiryActions],
     };
   }
 
   if (!reference || reference.status === 'SOURCE_UNAVAILABLE') {
     return {
       ...base, status: 'REFERENCE_UNAVAILABLE', findings: [],
-      summary: 'The medicine registration source could not provide an authoritative result.',
-      recommendedActions: ['Check the official NAFDAC source directly and try again later.'],
+      summary: `The medicine registration source could not provide an authoritative result.${expirySummary}`,
+      recommendedActions: ['Check the official NAFDAC source directly and try again later.', ...expiryActions],
     };
   }
 
   if (reference.status === 'NOT_FOUND') {
     return {
       ...base, status: 'RECORD_NOT_FOUND', findings: [],
-      summary: 'The completed official lookup did not find an exact registration record.',
-      recommendedActions: ['Confirm the number printed on the package and check the official source directly.'],
+      summary: `The completed official lookup did not find an exact registration record.${expirySummary}`,
+      recommendedActions: ['Confirm the number printed on the package and check the official source directly.', ...expiryActions],
     };
   }
 

@@ -28,6 +28,26 @@ function dependencies(product = medicine): AnalyzeDependencies {
 }
 
 describe('analyze route', () => {
+  it('allows only POST requests', async () => {
+    const response = await analyzeRequest(new Request('https://example.test/api/analyze'), dependencies());
+    expect(response.status).toBe(405);
+    expect(response.headers.get('allow')).toBe('POST');
+  });
+
+  it('rejects declared oversized multipart bodies before parsing', async () => {
+    const deps = dependencies();
+    const response = await analyzeRequest(new Request('https://example.test/api/analyze', {
+      method: 'POST',
+      headers: {
+        'content-type': 'multipart/form-data; boundary=x',
+        'content-length': String(MAX_IMAGE_BYTES + 256 * 1024 + 1),
+      },
+      body: '--x--',
+    }), deps);
+    expect(response.status).toBe(413);
+    expect(deps.extractProduct).not.toHaveBeenCalled();
+  });
+
   it('rejects invalid and oversized files with ApiError responses', async () => {
     const invalid = await analyzeRequest(request(new File(['x'], 'x.gif', { type: 'image/gif' })), dependencies());
     expect(invalid.status).toBe(415);
@@ -49,6 +69,28 @@ describe('analyze route', () => {
       expect(deps.lookupMedicine).not.toHaveBeenCalled();
       expect((await response.json() as { reference: unknown }).reference).toBeNull();
     }
+  });
+
+  it('rejects an empty image before invoking the model', async () => {
+    const deps = dependencies();
+    const response = await analyzeRequest(request(new File([], 'x.jpg', { type: 'image/jpeg' })), deps);
+    expect(response.status).toBe(422);
+    expect(await response.json()).toMatchObject({ error: { code: 'UNREADABLE_IMAGE', retryable: false } });
+    expect(deps.extractProduct).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed or provenance-unsafe adapter results', async () => {
+    const deps = dependencies();
+    deps.lookupMedicine = vi.fn().mockResolvedValue({
+      status: 'NOT_FOUND', record: null,
+      provenance: {
+        source: 'DEMO_FIXTURE', mode: 'DEMO_FIXTURE', authoritative: false,
+        requestedAt: '2026-10-31T00:00:00.000Z',
+      },
+    });
+    const response = await analyzeRequest(request(new File(['image'], 'x.jpg', { type: 'image/jpeg' })), deps);
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({ error: { code: 'SERVICE_UNAVAILABLE', retryable: true } });
   });
 
   it('maps known model timeout and rate-limit errors', async () => {

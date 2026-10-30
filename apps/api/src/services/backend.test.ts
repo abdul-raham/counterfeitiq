@@ -82,6 +82,12 @@ describe('investigation status', () => {
     expect(report.status).toBe('INSUFFICIENT_EVIDENCE');
     expect(report.categoryVerificationSupported).toBe(false);
   });
+  it('distinguishes an unreadable category from a known unsupported category', () => {
+    const report = buildInvestigation({ ...extracted, category: null }, null, now);
+    expect(report.status).toBe('INSUFFICIENT_EVIDENCE');
+    expect(report.summary).toContain('could not be read');
+    expect(report.summary).not.toContain('not supported');
+  });
   it('distinguishes authoritative not-found and unavailable', () => {
     const notFound: ReferenceLookupResult = {
       status: 'NOT_FOUND', record: null,
@@ -109,6 +115,18 @@ describe('investigation status', () => {
     expect(report.summary).toContain('printed package expiry has passed');
     expect(report.summary).toContain('regulatory registration expiry');
     expect(report.recommendedActions).toHaveLength(3);
+  });
+
+  it('retains package-expiry warnings when lookup evidence is missing or unavailable', () => {
+    const expired = { ...extracted, expiryDate: '2025-12' };
+    const missingNumber = buildInvestigation({ ...expired, nafdacNumber: null }, null, now);
+    const unavailableReport = buildInvestigation(expired, {
+      status: 'SOURCE_UNAVAILABLE', record: null,
+      provenance: { source: 'NONE', mode: 'NOT_EXECUTED', authoritative: false, requestedAt: null },
+    }, now);
+    expect(missingNumber.summary).toContain('printed package expiry has passed');
+    expect(unavailableReport.summary).toContain('printed package expiry has passed');
+    expect(missingNumber.recommendedActions.some((action) => action.includes('Do not use'))).toBe(true);
   });
 });
 

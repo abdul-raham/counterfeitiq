@@ -9,6 +9,10 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
+function isIsoTimestamp(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0 && !Number.isNaN(Date.parse(value));
+}
+
 function isMedicineReference(value: unknown): value is MedicineReference {
   if (!isObject(value)) return false;
   return typeof value.productName === 'string'
@@ -18,7 +22,7 @@ function isMedicineReference(value: unknown): value is MedicineReference {
     && Array.isArray(value.ingredients)
     && value.ingredients.every((ingredient) => typeof ingredient === 'string')
     && (typeof value.registrationExpiry === 'string' || value.registrationExpiry === null)
-    && typeof value.retrievedAt === 'string';
+    && isIsoTimestamp(value.retrievedAt);
 }
 
 function isProvenance(value: unknown): value is ReferenceProvenance {
@@ -26,7 +30,9 @@ function isProvenance(value: unknown): value is ReferenceProvenance {
   return ['NAFDAC_GREENBOOK', 'DEMO_FIXTURE', 'NONE'].includes(String(value.source))
     && ['LIVE_OFFICIAL', 'DEMO_FIXTURE', 'NOT_EXECUTED'].includes(String(value.mode))
     && typeof value.authoritative === 'boolean'
-    && (typeof value.requestedAt === 'string' || value.requestedAt === null);
+    && (isIsoTimestamp(value.requestedAt) || value.requestedAt === null)
+    && (value.sourceUrl === undefined || typeof value.sourceUrl === 'string')
+    && (value.note === undefined || typeof value.note === 'string');
 }
 
 export function isReferenceLookupResult(value: unknown): value is ReferenceLookupResult {
@@ -43,7 +49,20 @@ export function isReferenceLookupResult(value: unknown): value is ReferenceLooku
 
   if (value.status === 'FOUND') return isMedicineReference(value.record) && (live || fixture);
   if (value.status === 'NOT_FOUND') return value.record === null && live;
-  if (value.status === 'SOURCE_UNAVAILABLE') return value.record === null && provenance.authoritative === false;
+  if (value.status === 'SOURCE_UNAVAILABLE') {
+    const notExecuted = provenance.source === 'NONE'
+      && provenance.mode === 'NOT_EXECUTED'
+      && provenance.requestedAt === null;
+    const liveUnavailable = provenance.source === 'NAFDAC_GREENBOOK'
+      && provenance.mode === 'LIVE_OFFICIAL'
+      && isIsoTimestamp(provenance.requestedAt);
+    const fixtureUnavailable = provenance.source === 'DEMO_FIXTURE'
+      && provenance.mode === 'DEMO_FIXTURE'
+      && isIsoTimestamp(provenance.requestedAt);
+    return value.record === null
+      && provenance.authoritative === false
+      && (notExecuted || liveUnavailable || fixtureUnavailable);
+  }
   return false;
 }
 

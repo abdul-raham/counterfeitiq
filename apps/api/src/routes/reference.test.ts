@@ -54,6 +54,26 @@ describe('manual reference route', () => {
     expect(await response.json()).toMatchObject({ error: { code: 'SERVICE_UNAVAILABLE', retryable: true } });
   });
 
+  it('rejects inconsistent unavailable provenance and invalid timestamps', async () => {
+    for (const result of [
+      {
+        status: 'SOURCE_UNAVAILABLE', record: null,
+        provenance: { source: 'NONE', mode: 'LIVE_OFFICIAL', authoritative: false, requestedAt: null },
+      },
+      {
+        status: 'NOT_FOUND', record: null,
+        provenance: { source: 'NAFDAC_GREENBOOK', mode: 'LIVE_OFFICIAL', authoritative: true, requestedAt: 'not-a-date' },
+      },
+    ]) {
+      const response = await referenceRequest(
+        new Request('https://example.test/api/reference/A1-123'),
+        'A1-123',
+        { lookupMedicine: vi.fn().mockResolvedValue(result) },
+      );
+      expect(response.status).toBe(503);
+    }
+  });
+
   it('maps known adapter errors and hides unexpected errors', async () => {
     const known = await referenceRequest(
       new Request('https://example.test/api/reference/A1-123'),
