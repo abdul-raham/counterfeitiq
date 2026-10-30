@@ -17,6 +17,17 @@ export function buildInvestigation(
   const registrationExpiryStatus = reference?.status === 'FOUND'
     ? assessRegistrationExpiry(reference.record.registrationExpiry, now)
     : 'UNKNOWN';
+  const expiryWarnings: string[] = [];
+  const expiryActions: string[] = [];
+  if (packageExpiryStatus === 'EXPIRED') {
+    expiryWarnings.push('The printed package expiry has passed.');
+    expiryActions.push('Do not use a package after its printed expiry; consult a pharmacist or appropriate professional.');
+  }
+  if (registrationExpiryStatus === 'EXPIRED') {
+    expiryWarnings.push('The regulatory registration expiry in the reference has passed.');
+    expiryActions.push('Confirm the current registration status directly with NAFDAC.');
+  }
+  const expirySummary = expiryWarnings.length ? ` ${expiryWarnings.join(' ')}` : '';
 
   const base = {
     categoryVerificationSupported: categorySupported,
@@ -67,22 +78,22 @@ export function buildInvestigation(
   if (mismatches.length) {
     return {
       ...base, status: 'DETAILS_MISMATCH', findings,
-      summary: `One or more package details differ from the reference.${fixtureNote}`,
-      recommendedActions: ['Do not rely on this comparison alone; contact NAFDAC or the manufacturer.'],
+      summary: `One or more package details differ from the reference.${fixtureNote}${expirySummary}`,
+      recommendedActions: ['Do not rely on this comparison alone; contact NAFDAC or the manufacturer.', ...expiryActions],
     };
   }
 
   if (unknowns.length) {
     return {
       ...base, status: 'INSUFFICIENT_EVIDENCE', findings,
-      summary: `Available details match, but some fields could not be compared.${fixtureNote}`,
-      recommendedActions: ['Review the unknown fields and capture a clearer package image.'],
+      summary: `Available details match, but some fields could not be compared.${fixtureNote}${expirySummary}`,
+      recommendedActions: ['Review the unknown fields and capture a clearer package image.', ...expiryActions],
     };
   }
 
   return {
     ...base, status: 'REGISTRATION_DETAILS_MATCH', findings,
-    summary: `Package details match the available registration record. This does not confirm physical authenticity.${fixtureNote}`,
-    recommendedActions: ['Inspect package integrity and purchase only from a trusted seller.'],
+    summary: `Package details match the available registration record. This does not confirm physical authenticity.${fixtureNote}${expirySummary}`,
+    recommendedActions: ['Inspect package integrity and purchase only from a trusted seller.', ...expiryActions],
   };
 }

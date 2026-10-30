@@ -37,6 +37,14 @@ describe('normalization', () => {
     expect(normalizeStrength('500 MG')).toBe('500mg');
     expect(normalizeStrength('500 mg')).not.toBe(normalizeStrength('250 mg'));
   });
+
+  it('preserves decimal strength and canonicalizes thousands and micrograms', () => {
+    expect(normalizeStrength('0.5 mg')).toBe('0.5mg');
+    expect(normalizeStrength('2.5 mg / 5 ml')).toBe('2.5mg/5ml');
+    expect(normalizeStrength('1,000 mg')).toBe(normalizeStrength('1000 mg'));
+    expect(normalizeStrength('500 mcg')).toBe(normalizeStrength('500 µg'));
+    expect(normalizeStrength('500 μg')).toBe(normalizeStrength('500 µg'));
+  });
 });
 
 describe('comparison', () => {
@@ -90,6 +98,17 @@ describe('investigation status', () => {
     const report = buildInvestigation(extracted, liveFound, now);
     expect(report.status).toBe('REGISTRATION_DETAILS_MATCH');
     expect(report.physicalAuthenticityConfirmed).toBe(false);
+  });
+
+  it('warns separately about expired package and registration dates even when details match', () => {
+    const expiredReference: ReferenceLookupResult = liveFound.status === 'FOUND'
+      ? { ...liveFound, record: { ...liveFound.record, registrationExpiry: '2025-12-31' } }
+      : never();
+    const report = buildInvestigation({ ...extracted, expiryDate: '2025-12' }, expiredReference, now);
+    expect(report.status).toBe('REGISTRATION_DETAILS_MATCH');
+    expect(report.summary).toContain('printed package expiry has passed');
+    expect(report.summary).toContain('regulatory registration expiry');
+    expect(report.recommendedActions).toHaveLength(3);
   });
 });
 
