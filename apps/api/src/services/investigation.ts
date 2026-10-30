@@ -79,6 +79,13 @@ export function buildInvestigation(
   const findings = buildFindings(extracted, reference.record);
   const mismatches = findings.filter((finding) => finding.status === 'MISMATCH');
   const unknowns = findings.filter((finding) => finding.status === 'UNKNOWN');
+  const registrationNumberMatched = findings.some(
+    (finding) => finding.field === 'nafdacNumber' && finding.status === 'MATCH',
+  );
+  const coreClaimMatched = findings.some(
+    (finding) => ['productName', 'manufacturer', 'strength', 'ingredients'].includes(finding.field)
+      && finding.status === 'MATCH',
+  );
   const fixtureNote = reference.provenance.mode === 'DEMO_FIXTURE'
     ? ' This comparison uses a demo fixture, not a live official lookup.'
     : '';
@@ -91,11 +98,19 @@ export function buildInvestigation(
     };
   }
 
-  if (unknowns.length) {
+  if (!registrationNumberMatched || !coreClaimMatched) {
     return {
       ...base, status: 'INSUFFICIENT_EVIDENCE', findings,
-      summary: `Available details match, but some fields could not be compared.${fixtureNote}${expirySummary}`,
+      summary: `There was not enough matching core evidence to compare the package with confidence.${fixtureNote}${expirySummary}`,
       recommendedActions: ['Review the unknown fields and capture a clearer package image.', ...expiryActions],
+    };
+  }
+
+  if (unknowns.length) {
+    return {
+      ...base, status: 'REGISTRATION_DETAILS_MATCH', findings,
+      summary: `The registration number and available core details match, but some fields were unavailable. This does not confirm physical authenticity.${fixtureNote}${expirySummary}`,
+      recommendedActions: ['Review the unknown fields as unavailable evidence, not confirmed matches.', ...expiryActions],
     };
   }
 

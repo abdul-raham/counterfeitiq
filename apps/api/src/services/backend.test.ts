@@ -9,6 +9,12 @@ import {
   normalizeProductName,
   normalizeStrength,
 } from './normalize';
+import {
+  mockAuthoritativeNotFound,
+  mockExtractedMedicine,
+  mockLiveFound,
+  mockSourceUnavailable,
+} from './mocks';
 
 const extracted: ExtractedProduct = {
   category: 'medicine', productName: 'Example Medicine', brand: null,
@@ -44,6 +50,8 @@ describe('normalization', () => {
     expect(normalizeStrength('1,000 mg')).toBe(normalizeStrength('1000 mg'));
     expect(normalizeStrength('500 mcg')).toBe(normalizeStrength('500 µg'));
     expect(normalizeStrength('500 μg')).toBe(normalizeStrength('500 µg'));
+    expect(normalizeStrength('1,000mg')).toBe(normalizeStrength('1000 mg'));
+    expect(normalizeStrength('125 mg + 250 mg')).toBe('125mg+250mg');
   });
 });
 
@@ -69,6 +77,11 @@ describe('expiry', () => {
   it('keeps invalid values unknown and registration expiry separate', () => {
     expect(assessPackageExpiry('2026-02-31', now)).toBe('UNKNOWN');
     expect(assessRegistrationExpiry('2025-12-31', now)).toBe('EXPIRED');
+  });
+  it('accepts conservative ISO timestamps and month-first package dates', () => {
+    expect(assessRegistrationExpiry('2028-12-31T00:00:00.000Z', now)).toBe('NOT_EXPIRED');
+    expect(assessPackageExpiry('10/2026', now)).toBe('NOT_EXPIRED');
+    expect(assessPackageExpiry('09/2026', now)).toBe('EXPIRED');
   });
 });
 
@@ -106,6 +119,33 @@ describe('investigation status', () => {
     expect(report.physicalAuthenticityConfirmed).toBe(false);
   });
 
+  it('keeps unknown optional Greenbook fields without defeating sufficient core matches', () => {
+    const partialReference: ReferenceLookupResult = liveFound.status === 'FOUND'
+      ? {
+          ...liveFound,
+          record: { ...liveFound.record, manufacturer: null, ingredients: [] },
+        }
+      : never();
+    const report = buildInvestigation(extracted, partialReference, now);
+    expect(report.status).toBe('REGISTRATION_DETAILS_MATCH');
+    expect(report.findings.filter((finding) => finding.status === 'UNKNOWN').map((finding) => finding.field))
+      .toEqual(expect.arrayContaining(['manufacturer', 'ingredients']));
+    expect(report.summary).toContain('some fields were unavailable');
+  });
+
+  it('requires the registration number and at least one core claim to match', () => {
+    const referenceWithNoCoreEvidence: ReferenceLookupResult = liveFound.status === 'FOUND'
+      ? {
+          ...liveFound,
+          record: {
+            ...liveFound.record,
+            productName: '', manufacturer: null, strength: null, ingredients: [],
+          },
+        }
+      : never();
+    expect(buildInvestigation(extracted, referenceWithNoCoreEvidence, now).status).toBe('INSUFFICIENT_EVIDENCE');
+  });
+
   it('warns separately about expired package and registration dates even when details match', () => {
     const expiredReference: ReferenceLookupResult = liveFound.status === 'FOUND'
       ? { ...liveFound, record: { ...liveFound.record, registrationExpiry: '2025-12-31' } }
@@ -127,6 +167,14 @@ describe('investigation status', () => {
     expect(missingNumber.summary).toContain('printed package expiry has passed');
     expect(unavailableReport.summary).toContain('printed package expiry has passed');
     expect(missingNumber.recommendedActions.some((action) => action.includes('Do not use'))).toBe(true);
+  });
+});
+
+describe('typed development mocks', () => {
+  it('cover success, authoritative miss, and unavailable flows without claiming authenticity', () => {
+    expect(mockExtractedMedicine.nafdacNumber).toBe(mockLiveFound.status === 'FOUND' ? mockLiveFound.record.nafdacNumber : null);
+    expect(mockAuthoritativeNotFound.provenance.authoritative).toBe(true);
+    expect(mockSourceUnavailable.provenance).toMatchObject({ mode: 'NOT_EXECUTED', authoritative: false });
   });
 });
 

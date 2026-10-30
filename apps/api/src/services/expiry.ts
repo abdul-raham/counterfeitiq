@@ -2,7 +2,10 @@ export type ExpiryStatus = 'EXPIRED' | 'NOT_EXPIRED' | 'UNKNOWN';
 
 function expiryBoundary(value: string | null): Date | null {
   if (!value) return null;
-  const match = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(value.trim());
+  const trimmed = value.trim();
+  const monthFirst = /^(\d{2})\/(\d{4})$/.exec(trimmed);
+  const normalized = monthFirst ? `${monthFirst[2]}-${monthFirst[1]}` : trimmed;
+  const match = /^(\d{4})-(\d{2})(?:-(\d{2})(?:T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2}))?)?$/.exec(normalized);
   if (!match) return null;
   const year = Number(match[1]);
   const month = Number(match[2]);

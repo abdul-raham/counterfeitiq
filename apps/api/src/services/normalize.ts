@@ -27,12 +27,13 @@ export function normalizeStrength(value: string | null): string | null {
   const normalized = value
     .normalize('NFKC')
     .toLowerCase()
-    .replace(/(\d),(?=\d{3}\b)/g, '$1')
+    .replace(/(\d),(?=\d{3}(?!\d))/g, '$1')
     .replace(/mcg|μg|µg/g, 'µg')
     .replace(/\s+/g, ' ')
     .trim()
     .replace(/(\d)\s+(mg|g|kg|ml|l|µg|iu)\b/g, '$1$2')
-    .replace(/\s*\/\s*/g, '/');
+    .replace(/\s*\/\s*/g, '/')
+    .replace(/\s*\+\s*/g, '+');
   return normalized || null;
 }
 
