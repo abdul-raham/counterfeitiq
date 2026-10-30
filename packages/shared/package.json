@@ -1,0 +1,19 @@
+{
+  "name": "@counterfeitiq/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./schemas.ts" },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "latest",
+    "eslint": "latest",
+    "typescript": "^6.0.0",
+    "typescript-eslint": "latest",
+    "vitest": "latest"
+  }
+}

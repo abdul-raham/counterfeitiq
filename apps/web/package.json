@@ -1,0 +1,31 @@
+{
+  "name": "@counterfeitiq/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "test": "vitest run",
+    "typecheck": "tsc -b --pretty false",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@counterfeitiq/shared": "*",
+    "@vitejs/plugin-react": "latest",
+    "vite": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "@eslint/js": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "eslint": "latest",
+    "eslint-plugin-react-hooks": "latest",
+    "eslint-plugin-react-refresh": "latest",
+    "typescript": "^6.0.0",
+    "typescript-eslint": "latest",
+    "vitest": "latest"
+  }
+}

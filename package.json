@@ -1,0 +1,17 @@
+{
+  "name": "counterfeitiq",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev:web": "npm run dev --workspace @counterfeitiq/web",
+    "dev:api": "npm run dev --workspace @counterfeitiq/api",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "engines": { "node": ">=22" },
+  "devDependencies": { "typescript": "^6.0.0" }
+}
