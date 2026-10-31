@@ -118,6 +118,18 @@ describe('scanner', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
+  it('keeps keyboard focus on the page heading when analysis is cancelled', async () => {
+    vi.stubGlobal('fetch', vi.fn((_url: string, init: RequestInit) => new Promise((_resolve, reject) => {
+      init.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+    })));
+    renderAt('/scan');
+    await user.upload(screen.getByTestId('gallery-input'), photo);
+    await user.click(await screen.findByRole('button', { name: 'Check this product' }));
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Checking your product' })).toHaveFocus());
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Scan a product' })).toHaveFocus());
+  });
+
   it('falls back to the native capture input when the camera API is missing', async () => {
     vi.stubGlobal('navigator', Object.assign(Object.create(navigator), { mediaDevices: undefined }));
     renderAt('/scan');

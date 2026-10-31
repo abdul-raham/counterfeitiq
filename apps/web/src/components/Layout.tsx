@@ -3,6 +3,7 @@ import { NavLink, Link, Outlet, useLocation } from 'react-router';
 import { MotionConfig } from 'motion/react';
 import { ScanLine } from 'lucide-react';
 import { isSampleMode } from '../lib/api';
+import { ErrorBoundary } from './ErrorBoundary';
 
 const SampleBanner = lazy(() => import('../features/sample/SampleBanner'));
 
@@ -44,7 +45,7 @@ export function Layout() {
           </div>
         </header>
         <main id="main" className="flex-1">
-          <Outlet />
+          <ErrorBoundary key={pathname}><Outlet /></ErrorBoundary>
         </main>
         <footer className="border-t border-line">
           <div className="mx-auto flex max-w-5xl flex-col gap-1 px-4 py-6 text-sm text-muted sm:flex-row sm:justify-between sm:px-6">

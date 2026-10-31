@@ -60,6 +60,15 @@ describe('describeOutcome', () => {
   });
 });
 
+describe('lapsed registration', () => {
+  it('does not show a green summary and says the record has expired', () => {
+    const response = analysis({ verification: { registrationExpiryStatus: 'EXPIRED' } });
+    expect(describeOutcome(response).tone).toBe('warn');
+    render(<Report imageUrl={null} response={response} />);
+    expect(screen.getByText('The expiry date on the registration record has passed')).toBeInTheDocument();
+  });
+});
+
 describe('expired and unreadable packs', () => {
   it('does not show a green summary over an expired pack', () => {
     expect(describeOutcome(analysis()).tone).toBe('ok');
@@ -161,6 +170,12 @@ describe('Report', () => {
     })} />);
     expect(screen.getByText(/no matching demonstration record/)).toBeInTheDocument();
     expect(screen.queryByText('Demonstration record, not live NAFDAC data')).not.toBeInTheDocument();
+  });
+
+  it('does not imply a record exists when none was checked', () => {
+    render(<Report imageUrl={null} response={analysis({ reference: null, verification: { status: 'INSUFFICIENT_EVIDENCE' } })} />);
+    expect(screen.getByText('No record was checked')).toBeInTheDocument();
+    expect(screen.queryByText('From the registration record')).not.toBeInTheDocument();
   });
 
   it('lists differences with both values', () => {
