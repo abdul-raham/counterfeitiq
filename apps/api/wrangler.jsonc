@@ -2,5 +2,11 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "counterfeitiq-api",
   "main": "src/index.ts",
-  "compatibility_date": "2026-10-30"
+  "compatibility_date": "2026-10-30",
+  "ratelimits": [
+    { "name": "GREENBOOK_LIMITER", "namespace_id": "1003", "simple": { "limit": 30, "period": 60 } }
+  ],
+  "vars": {
+    "REFERENCE_MODE": "demo"
+  }
 }

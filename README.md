@@ -22,5 +22,5 @@ npm test
 npm run build
 ```
 
-The MVP has no accounts, database, or persistent image uploads. Live NAFDAC access must be explicitly authorized; otherwise the application must disclose demo-fixture provenance.
+The MVP has no accounts, database, or persistent image uploads. Live NAFDAC access must be explicitly authorized; otherwise the application must disclose demo-fixture provenance. NAFDAC permission has not been established yet, so the application runs in demonstration mode. See [docs/greenbook-access.md](docs/greenbook-access.md).
 

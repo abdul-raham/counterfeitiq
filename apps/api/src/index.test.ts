@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EXTRACTION_PROMPT } from './ai/extraction';
-import { handleRequest } from './app';
+import { createDependencies, handleRequest } from './app';
 import worker from './index';
 import * as entry from './index';
 
@@ -65,6 +65,20 @@ describe('Cloudflare Worker entrypoint', () => {
 });
 
 describe('honest results', () => {
+  it('selects a reference adapter without changing the route dependency contract', async () => {
+    const demo = createDependencies({ REFERENCE_MODE: 'demo' });
+    const live = createDependencies({ REFERENCE_MODE: 'authorized_live' });
+
+    await expect(demo.lookupMedicine('A1-123456')).resolves.toMatchObject({
+      status: 'FOUND',
+      provenance: { mode: 'DEMO_FIXTURE', authoritative: false },
+    });
+    await expect(live.lookupMedicine('A1-123456')).resolves.toMatchObject({
+      status: 'SOURCE_UNAVAILABLE',
+      provenance: { mode: 'NOT_EXECUTED', authoritative: false },
+    });
+  });
+
   it('fails instead of inventing a product when no model is configured', async () => {
     const response = await worker.fetch(photoRequest());
     expect(response.status).toBe(503);
