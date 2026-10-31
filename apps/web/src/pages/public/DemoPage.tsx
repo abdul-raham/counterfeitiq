@@ -6,7 +6,7 @@ const DEMO_CODES = [
   { label: 'Product code', shows: 'The product and manufacturer.', identifier: '2000000001012', image: '1-product.png' },
   { label: 'Product with no batch data', shows: 'A product with nothing else indexed.', identifier: '2000000001029', image: '2-product-no-batch-data.png' },
   { label: 'Batch code', shows: 'Adds batch details.', identifier: '(01)02000000001012(10)DX2041', image: '3-batch-code.png' },
-  { label: 'Serialized pack, try it twice', shows: 'Adds pack details. A scan from a second device asks who scratched the panel.', identifier: '(01)02000000001012(10)DX2041(17)280131(21)DEMOSN0001', image: '4-serialized-pack.png' },
+  { label: 'Serialized pack, try it twice', shows: 'Adds pack details. A scan from a second device asks whether you scratched the panel earlier.', identifier: '(01)02000000001012(10)DX2041(17)280131(21)DEMOSN0001', image: '4-serialized-pack.png' },
   { label: 'Recalled batch', shows: 'A recall warning.', identifier: '(01)02000000001012(10)DX2042', image: '5-recalled-batch.png' },
   { label: 'Expired batch', shows: 'An expiry warning.', identifier: '(01)02000000001012(10)DX1999', image: '6-expired-batch.png' },
   { label: 'Blocked pack', shows: 'A blocked pack warning.', identifier: '(01)02000000001012(21)DEMOSN0003', image: '7-blocked-pack.png' },
