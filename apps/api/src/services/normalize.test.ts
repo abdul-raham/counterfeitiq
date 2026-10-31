@@ -66,6 +66,15 @@ describe('ingredients on real records', () => {
     expect(ingredientStatus(['Hepatitis B Surface Antigen'], ['Hepatitis B vaccine'])).toBe('UNKNOWN');
   });
 
+  it.each([
+    [['Folic Acid'], ['Ascorbic Acid']],
+    [['Vitamin C'], ['Vitamin D3']],
+    [['Sodium Chloride'], ['Sodium Bicarbonate']],
+    [['Tetanus vaccine'], ['Hepatitis B vaccine']],
+  ])('does not let a generic word hide a real difference: %s vs %s', (onPack, onRecord) => {
+    expect(ingredientStatus(onPack, onRecord)).toBe('MISMATCH');
+  });
+
   it('still reports clearly different ingredients', () => {
     expect(ingredientStatus(['Ibuprofen'], ['Paracetamol'])).toBe('MISMATCH');
   });

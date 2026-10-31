@@ -50,6 +50,13 @@ function compareField(
   };
 }
 
+// These appear in many unrelated ingredients, so sharing one says nothing:
+// folic acid and ascorbic acid are different ingredients.
+const GENERIC_INGREDIENT_WORDS = new Set([
+  'acid', 'sodium', 'potassium', 'calcium', 'magnesium', 'hydrochloride', 'sulfate', 'sulphate',
+  'phosphate', 'citrate', 'acetate', 'maleate', 'oxide', 'vitamin', 'vaccine', 'antigen', 'extract',
+]);
+
 function compareIngredients(packaging: string[], reference: string[]): VerificationFinding {
   const packagingValues = [...new Set(packaging.map(normalizeIngredient).filter(Boolean))].sort();
   const referenceValues = [...new Set(reference.map(normalizeIngredient).filter(Boolean))].sort();
@@ -69,7 +76,9 @@ function compareIngredients(packaging: string[], reference: string[]): Verificat
     || referenceValues.every((ingredient) => packagingSet.has(ingredient));
   // Records and packs often name one ingredient differently, such as "Hepatitis B vaccine"
   // and "Hepatitis B surface antigen". A shared word means a conflict cannot be concluded.
-  const words = (values: string[]) => values.flatMap((value) => value.split(' ')).filter((word) => word.length > 3);
+  const words = (values: string[]) => values
+    .flatMap((value) => value.split(' '))
+    .filter((word) => word.length > 3 && !GENERIC_INGREDIENT_WORDS.has(word));
   const referenceWords = new Set(words(referenceValues));
   const sharedWord = words(packagingValues).some((word) => referenceWords.has(word));
   if (!matches && ((overlap && oneListContainsTheOther) || sharedWord)) {
