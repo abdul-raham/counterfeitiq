@@ -1,6 +1,6 @@
 import { useCallback, type ReactNode } from 'react';
 import { useLocation, useParams } from 'react-router';
-import { Flag, ScanBarcode, ScanSearch } from 'lucide-react';
+import { Flag, QrCode, ScanSearch } from 'lucide-react';
 import { Button, ButtonLink } from '../../components/Button';
 import { ErrorState } from '../../components/ErrorState';
 import { PageHeading } from '../../components/PageHeading';
@@ -70,7 +70,7 @@ function LookupResult({ report, reportLink, code }: { report: ProductReport; rep
     return (
       <div className="mt-6 space-y-4">
         <StatusMessage tone="warn" title="That is not a readable product code" role="alert">
-          Try scanning again, or type the number printed under the barcode. It may have been misread.
+          Try scanning again, or type the code printed next to it. It may have been misread.
         </StatusMessage>
         <p className="break-all text-sm text-muted">Code: {code}</p>
       </div>
@@ -98,7 +98,7 @@ function LookupResult({ report, reportLink, code }: { report: ProductReport; rep
     );
   }
 
-  // A repeat only means something for one serialized pack. Every pack of a product shares its barcode.
+  // A repeat only means something for one serialized pack. Every pack of a product shares its product code.
   const repeat = identityLevel === 'PACK' && scanSignal && scanSignal.totalScans > 1 ? scanSignal : null;
   const noteworthy = warnings.filter((warning) => warning.code !== 'SCAN_HISTORY_UNAVAILABLE');
 
@@ -199,7 +199,7 @@ export function ProductPage() {
       {!loading && (
         <div className="mt-8 flex flex-col gap-3 border-t border-line pt-6">
           <ButtonLink to="/scan">
-            <ScanBarcode aria-hidden="true" className="size-5" />
+            <QrCode aria-hidden="true" className="size-5" />
             Scan another product
           </ButtonLink>
           <ButtonLink to="/inspect" variant="secondary">

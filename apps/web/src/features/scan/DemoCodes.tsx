@@ -2,7 +2,7 @@ import { Link } from 'react-router';
 
 // Fictional codes seeded in apps/demo-erp. See docs/demo.md for printable versions.
 const DEMO_CODES = [
-  { label: 'Product barcode', identifier: '2000000001012' },
+  { label: 'Product code', identifier: '2000000001012' },
   { label: 'Product with no batch data', identifier: '2000000001029' },
   { label: 'Batch code', identifier: '(01)02000000001012(10)DX2041' },
   { label: 'Serialized pack, try it twice', identifier: '(01)02000000001012(21)DEMOSN0001' },

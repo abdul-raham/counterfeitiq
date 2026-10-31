@@ -1,9 +1,9 @@
-import { ScanBarcode, ScanSearch } from 'lucide-react';
+import { QrCode, ScanSearch } from 'lucide-react';
 import { ButtonLink } from '../components/Button';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
 const steps = [
-  { title: 'Scan the barcode', body: 'Use your camera, a photo, or type the number. No account needed.' },
+  { title: 'Scan the QR code', body: 'Use your camera, a photo, or type the code. No account needed.' },
   { title: 'See the record', body: "We ask the manufacturer's system what it holds for that code." },
   { title: 'Read the details', body: 'See the product, batch and pack details where available, and where they came from.' },
 ];
@@ -18,11 +18,11 @@ export function HomePage() {
           Know what you're buying.
         </h1>
         <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted sm:text-xl">
-          Scan a medicine's barcode to see what its manufacturer has on record.
+          Scan a medicine's QR code to see what its manufacturer has on record.
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <ButtonLink to="/scan">
-            <ScanBarcode aria-hidden="true" className="size-5" />
+            <QrCode aria-hidden="true" className="size-5" />
             Scan a product
           </ButtonLink>
           <ButtonLink to="/inspect" variant="secondary">
@@ -50,7 +50,7 @@ export function HomePage() {
       <section aria-labelledby="limits" className="border-t border-line py-12">
         <h2 id="limits" className="text-xl font-semibold tracking-tight">What this can and cannot tell you</h2>
         <p className="mt-3 max-w-2xl leading-relaxed text-muted">
-          A record shows what a manufacturer holds for a code. It does not prove a pack is genuine, because a barcode can be copied. A missing record does not prove a product is fake. This demonstration uses fictional companies and products.
+          A record shows what a manufacturer holds for a code. It does not prove a pack is genuine, because a code can be copied. A missing record does not prove a product is fake. This demonstration uses fictional companies and products.
         </p>
       </section>
     </div>

@@ -68,7 +68,7 @@ export function BarcodeScanner({ onDetect, onCancel, onUnavailable }: BarcodeSca
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-6 inset-y-12 rounded-lg border-2 border-white/80" />
       </div>
       <p role="status" className="mt-3 text-sm text-muted">
-        {scanning ? 'Hold the barcode inside the frame.' : 'Starting the camera'}
+        {scanning ? 'Hold the QR code inside the frame.' : 'Starting the camera'}
       </p>
       <Button variant="secondary" onClick={onCancel} className="mt-4 w-full sm:w-auto">Cancel</Button>
     </div>

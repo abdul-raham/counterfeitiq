@@ -4,7 +4,7 @@
 flowchart TD
     User[Consumer's phone or browser]
     subgraph Web["Web app (React on Vercel)"]
-        Scan["/scan: camera, photo or typed code"]
+        Scan["/scan: QR camera, photo or typed code"]
         Product["/product/:identifier: record, sources and warnings"]
         Inspect["/inspect: optional packaging inspection"]
     end
@@ -39,7 +39,7 @@ flowchart TD
 - **No database or accounts.** There are no logins, and nothing here needs Supabase.
 - **`ErpConnector` is the integration point.** A real manufacturer connection replaces the simulated ERP, and every report lists its sources.
 - **Gemma takes no part in a scan.** It only reads packaging photos on `/inspect`, so scans use no AI quota.
-- **Product, batch and pack stay separate.** Every pack of a product shares a plain barcode, so only a serialized pack can show a repeat scan.
+- **Product, batch and pack stay separate.** Every pack of a product shares a product code, so only a serialized pack can show a repeat scan.
 - **A reload doesn't count as a scan.** Every `/api/scan` call is recorded, so the web app reuses the report for a reload or the back button. Opening a saved link does count.
 - **Failures are never "not found".** If the source can't answer, the result is `UNAVAILABLE`.
 
