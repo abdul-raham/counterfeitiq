@@ -15,6 +15,7 @@ Checked on 2026-10-31.
 | `admin.greenbook.nafdac.gov.ng/robots.txt` | 404 | No statement |
 | Terms pages: `/terms` and `/about` on the Greenbook; `/terms-of-use/`, `/terms-and-conditions/` and `/privacy-policy/` on nafdac.gov.ng | All 404 | No published terms found at these addresses |
 | Greenbook home page | No links to terms, API or data reuse. Footer: "© NAFDAC 2025. All rights reserved." | Rights are reserved, and reuse is not addressed |
+| `greenbook.nafdac.gov.ng/privacy_policy_ios.html`, effective 2023-03-13 | Covers the mobile app. Says nothing about automated access, scraping, APIs or reuse. Refers to Terms and Conditions "accessible at NAFDAC Greenbook", with no link | **Terms exist but we could not find them.** Ask NAFDAC for them |
 | Web search for an API or an automated access policy | None found | A public API is not documented |
 | CAPTCHA, login, or rate limit headers | None seen on the home page or the single search | Nothing had to be bypassed |
 | Response from NAFDAC | None. They have not been contacted yet | **This is the blocker** |
@@ -25,7 +26,7 @@ Automated access is not prohibited anywhere we looked, but nothing confirms it i
 
 1. Send the request below to `nafdac@nafdac.gov.ng`, the address NAFDAC publishes for information requests.
 2. Add the reply, or the terms it points to, to the table above.
-3. Set `GREENBOOK_ACCESS_APPROVAL` to where the permission is recorded, then follow [Switching provider](#switching-provider).
+3. Set `GREENBOOK_ACCESS_APPROVAL` to where the permission is recorded, then follow [Switching mode](#switching-mode).
 
 ### Draft request
 
@@ -49,7 +50,7 @@ Automated access is not prohibited anywhere we looked, but nothing confirms it i
 
 ## Observed request
 
-Sent once by hand with `curl`, for `A6-100103`, at 2026-10-31T09:42:59Z. It used an identifying User-Agent and no cookies or CSRF token. This, the robots.txt files and the policy pages are the only requests made to NAFDAC sites during this work.
+Sent once by hand with `curl`, for `A6-100103`, at 2026-10-31T09:42:59Z. It used an identifying User-Agent and no cookies or CSRF token. This, the robots.txt files, the home page and the policy pages are the only requests made to NAFDAC sites during this work.
 
 ```http
 GET https://greenbook.nafdac.gov.ng/?draw=1&start=0&length=10&search[value]=A6-100103&search[regex]=false&search_ingredient=&columns[0][data]=product_name&columns[0][name]=product_name&columns[0][searchable]=true&...
@@ -83,29 +84,41 @@ Sanitized response: HTTP 200, `application/json`, 6.6 KB, 0.59 s. Fields not use
 
 Only the positive path has been seen for real. The live shape of an empty result, and of Greenbook errors and rate limiting, is inferred from the DataTables format and has not been observed. Repeat the request above for an unknown number once access is approved.
 
-## Switching provider
+## Switching mode
 
 Set these on the API Worker. The frontend and verification engine need no changes.
 
 | Variable | Values | Default |
 | --- | --- | --- |
-| `REFERENCE_PROVIDER` | `fixture` or `greenbook` | `fixture` |
+| `REFERENCE_MODE` | `demo` or `authorized_live` | `demo` |
 | `GREENBOOK_ACCESS_APPROVAL` | Where NAFDAC's permission is recorded, such as `NAFDAC email 2026-11-02, ref 123` | Empty |
 
-| `REFERENCE_PROVIDER` | Approval | Behaviour |
+| `REFERENCE_MODE` | Approval | Behaviour |
 | --- | --- | --- |
-| `fixture` or unset | Ignored | Fictional records, labelled `DEMO_FIXTURE`. A miss is `SOURCE_UNAVAILABLE` |
-| `greenbook` | Set | Live Greenbook |
-| `greenbook` | Empty | Nothing is sent. `SOURCE_UNAVAILABLE` with `NOT_EXECUTED` |
+| `demo` or unset | Ignored | Fictional records, labelled `DEMO_FIXTURE`. A miss is `SOURCE_UNAVAILABLE` |
+| `authorized_live` | Set | Live Greenbook. Failures never fall back to fixtures |
+| `authorized_live` | Empty | Nothing is sent. `SOURCE_UNAVAILABLE` with `NOT_EXECUTED` |
 | Anything else | Ignored | Nothing is sent. `SOURCE_UNAVAILABLE` with `NOT_EXECUTED` |
 
 ```sh
 # Demonstration mode (current)
-npx wrangler deploy --var REFERENCE_PROVIDER:fixture
+npx wrangler deploy --var REFERENCE_MODE:demo
 
 # Live mode: only after this document records NAFDAC's permission
-npx wrangler deploy --var REFERENCE_PROVIDER:greenbook --var "GREENBOOK_ACCESS_APPROVAL:<where it is recorded>"
+npx wrangler deploy --var REFERENCE_MODE:authorized_live --var "GREENBOOK_ACCESS_APPROVAL:<where it is recorded>"
 ```
+
+The endpoint, 8 second timeout, cache lifetimes and request limits are constants at the top of `apps/api/src/adapters/greenbook.ts`, so they are changed in code rather than by configuration. Only the official origin is used.
+
+## Smoke test
+
+**Do not run this until the permission above is recorded.** It has not been run yet. It is never part of `npm test` or CI, and it refuses to start without an approval, before any request is sent.
+
+```sh
+GREENBOOK_ACCESS_APPROVAL="<where it is recorded>" npm run smoke:greenbook --workspace @counterfeitiq/api
+```
+
+It sends one lookup for `A6-100103` through the real adapter, checks for an exact match with live provenance, and prints only the outcome. It prints no headers or cookies.
 
 ## How the live adapter behaves
 
@@ -128,3 +141,5 @@ Limits: 30 requests a minute per isolate, plus the `GREENBOOK_LIMITER` binding a
 - **Manufacturer:** the Greenbook search gives an applicant, not a manufacturer, so `manufacturer` is `null` and is not compared.
 - **Inactive registrations:** the Greenbook includes these, but `MedicineReference` has no status field. They return `FOUND` with a `provenance.note` saying the registration is not listed as active. The report shows this note, but the verification engine does not act on it.
 - **Numbers with no hyphen:** the Greenbook search cannot match these, so they are not looked up.
+- **Stored number format:** the search is a text match on the hyphenated number. A record stored in another form, such as with a space, would not be returned, and the result would be an authoritative `NOT_FOUND`. How consistently the Greenbook stores numbers has not been checked. **Check this before go-live.**
+- **Concurrent lookups:** these are not merged, because a Worker must not await a promise from another request. Two simultaneous lookups of an uncached number send two requests, within the rate limits.

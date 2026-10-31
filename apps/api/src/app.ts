@@ -9,7 +9,7 @@ export interface Env {
   ENVIRONMENT?: string;
   GEMMA_API_KEY?: string;
   GEMMA_API_URL?: string;
-  REFERENCE_PROVIDER?: string;
+  REFERENCE_MODE?: string;
   GREENBOOK_ACCESS_APPROVAL?: string;
   GREENBOOK_LIMITER?: RateLimiter;
 }
@@ -35,7 +35,7 @@ export function withCors(response: Response): Response {
 
 export function createDependencies(env: Env = {}): AnalyzeDependencies {
   const referenceAdapter = createReferenceAdapter({
-    provider: env.REFERENCE_PROVIDER,
+    mode: env.REFERENCE_MODE,
     greenbookAccessApproval: env.GREENBOOK_ACCESS_APPROVAL,
     greenbook: { limiter: env.GREENBOOK_LIMITER },
   });

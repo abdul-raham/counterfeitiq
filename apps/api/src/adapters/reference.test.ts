@@ -90,6 +90,19 @@ describe('Greenbook exact match', () => {
     expect(headers.get('User-Agent')).toContain('CounterfeitIQ');
   });
 
+  it.each(['A6-100103', 'a6-100103', ' A6 - 100103 ', 'A6–100103', 'NAFDAC No: A6-100103'])(
+    'matches %j against the same stored number',
+    async (requested) => {
+      const { adapter } = adapterReturning(jsonResponse(page([A6_100103])));
+      expect((await adapter.lookupMedicine(requested)).status).toBe('FOUND');
+    },
+  );
+
+  it.each(['a6-100103', 'A6 100103', 'A6 - 100103'])('matches a record stored as %j', async (stored) => {
+    const { adapter } = adapterReturning(jsonResponse(page([{ ...A6_100103, NAFDAC: stored }])));
+    expect((await adapter.lookupMedicine('A6-100103')).status).toBe('FOUND');
+  });
+
   it('picks the exact record, not the first one', async () => {
     const { adapter } = adapterReturning(jsonResponse(page([
       { ...A6_100103, NAFDAC: 'A6-1001039', product_name: 'Other Product' },
@@ -312,7 +325,7 @@ describe('lookups that must not run', () => {
   ])('makes no Greenbook request for %s', async (_label, product) => {
     const fetchMock = vi.fn<typeof fetch>();
     vi.stubGlobal('fetch', fetchMock);
-    const dependencies = createDependencies({ REFERENCE_PROVIDER: 'greenbook', GREENBOOK_ACCESS_APPROVAL: 'test' });
+    const dependencies = createDependencies({ REFERENCE_MODE: 'authorized_live', GREENBOOK_ACCESS_APPROVAL: 'test' });
     dependencies.extractProduct = async () => ({
       productName: 'Pack', brand: null, manufacturer: null, strength: null, ingredients: [],
       batchNumber: null, manufacturingDate: null, expiryDate: null, ...product,
@@ -336,7 +349,7 @@ describe('provider selection', () => {
     const fetchMock = vi.fn<typeof fetch>();
     vi.stubGlobal('fetch', fetchMock);
 
-    for (const adapter of [createReferenceAdapter(), createReferenceAdapter({ provider: ' Fixture ' })]) {
+    for (const adapter of [createReferenceAdapter(), createReferenceAdapter({ mode: ' Demo ' })]) {
       const found = await adapter.lookupMedicine('A1-123456');
       expect(found).toMatchObject({
         status: 'FOUND',
@@ -367,7 +380,7 @@ describe('provider selection', () => {
   it.each([undefined, '', '   '])('sends nothing to the Greenbook without an access approval (%j)', async (approval) => {
     const fetchMock = vi.fn<typeof fetch>();
     const adapter = createReferenceAdapter({
-      provider: 'greenbook',
+      mode: 'authorized_live',
       greenbookAccessApproval: approval,
       greenbook: { fetch: fetchMock, state: createGreenbookState() },
     });
@@ -378,7 +391,7 @@ describe('provider selection', () => {
   it('uses the Greenbook once access is approved', async () => {
     const fetchMock = vi.fn<typeof fetch>().mockImplementation(async () => jsonResponse(page([A6_100103])));
     const adapter = createReferenceAdapter({
-      provider: 'greenbook',
+      mode: 'authorized_live',
       greenbookAccessApproval: 'NAFDAC email, 2026-11-02',
       greenbook: { fetch: fetchMock, now: () => NOW, state: createGreenbookState() },
     });
@@ -388,8 +401,41 @@ describe('provider selection', () => {
     });
   });
 
-  it('fails closed on an unknown provider instead of serving fixtures', async () => {
-    const result = await createReferenceAdapter({ provider: 'greenbok' }).lookupMedicine('A1-123456');
+  it.each([
+    ['a timeout', () => Promise.reject(new DOMException('Aborted', 'AbortError'))],
+    ['a server error', async () => new Response('down', { status: 500 })],
+    ['a valid miss', async () => jsonResponse(page([]))],
+  ])('never answers from fixtures after %s in live mode', async (_name, respond) => {
+    const adapter = createReferenceAdapter({
+      mode: 'authorized_live',
+      greenbookAccessApproval: 'test',
+      greenbook: { fetch: vi.fn<typeof fetch>().mockImplementation(respond), now: () => NOW, state: createGreenbookState() },
+    });
+    const result = await adapter.lookupMedicine('A1-123456');
+    expect(result.record).toBeNull();
+    expect(result.provenance.source).toBe('NAFDAC_GREENBOOK');
+  });
+
+  it('gives the route the same contract in both modes', async () => {
+    const demo = await createReferenceAdapter({ mode: 'demo' }).lookupMedicine('A1-123456');
+    const live = await createReferenceAdapter({
+      mode: 'authorized_live',
+      greenbookAccessApproval: 'test',
+      greenbook: {
+        fetch: vi.fn<typeof fetch>().mockImplementation(async () => jsonResponse(page([A6_100103]))),
+        state: createGreenbookState(),
+      },
+    }).lookupMedicine('A6-100103');
+    for (const result of [demo, live]) {
+      expect(isReferenceLookupResult(result)).toBe(true);
+      expect(Object.keys(result.record ?? {}).sort()).toEqual([
+        'ingredients', 'manufacturer', 'nafdacNumber', 'productName', 'registrationExpiry', 'retrievedAt', 'strength',
+      ]);
+    }
+  });
+
+  it('fails closed on an unknown mode instead of serving fixtures', async () => {
+    const result = await createReferenceAdapter({ mode: 'authorised_live' }).lookupMedicine('A1-123456');
     expect(result).toMatchObject({ status: 'SOURCE_UNAVAILABLE', provenance: notRun });
   });
 });

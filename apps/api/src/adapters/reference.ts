@@ -20,8 +20,8 @@ const DEMO_FIXTURES: Record<string, MedicineReference> = {
 export type { ReferenceAdapter } from './contract';
 
 export interface ReferenceOptions {
-  /** REFERENCE_PROVIDER: "fixture" (the default) or "greenbook". */
-  provider?: string;
+  /** REFERENCE_MODE: "demo" (the default) or "authorized_live". */
+  mode?: string;
   /** Where NAFDAC's permission is recorded. Greenbook requests stay off without it. */
   greenbookAccessApproval?: string;
   greenbook?: GreenbookOptions;
@@ -71,10 +71,10 @@ function refusingAdapter(note: string): ReferenceAdapter {
 }
 
 export function createReferenceAdapter(options: ReferenceOptions = {}): ReferenceAdapter {
-  const provider = options.provider?.trim().toLowerCase() || 'fixture';
-  if (provider === 'fixture') return createFixtureAdapter(options.now ?? (() => new Date()));
+  const mode = options.mode?.trim().toLowerCase() || 'demo';
+  if (mode === 'demo') return createFixtureAdapter(options.now ?? (() => new Date()));
   // Anything else fails closed: a typo must not quietly serve demo data.
-  if (provider !== 'greenbook') return refusingAdapter('The registration source is not configured.');
+  if (mode !== 'authorized_live') return refusingAdapter('The registration source is not configured.');
   if (!options.greenbookAccessApproval?.trim()) {
     return refusingAdapter('Live NAFDAC lookup is not enabled.');
   }

@@ -285,10 +285,10 @@ export function createGreenbookAdapter(options: GreenbookOptions = {}): Referenc
 
   return {
     async lookupMedicine(nafdacNumber: string): Promise<ReferenceLookupResult> {
-      const key = normalizeNafdacNumber(nafdacNumber);
-      if (!key) return notExecuted(INVALID_NUMBER_NOTE);
+      if (!normalizeNafdacNumber(nafdacNumber)) return notExecuted(INVALID_NUMBER_NOTE);
       const query = toGreenbookQuery(nafdacNumber);
-      if (!query) return notExecuted(NOTES.needsHyphen);
+      const key = query && normalizeNafdacNumber(query);
+      if (!key) return notExecuted(NOTES.needsHyphen);
 
       const nowMs = now().getTime();
       const cached = state.cache.get(key);

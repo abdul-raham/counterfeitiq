@@ -7,6 +7,6 @@
     { "name": "GREENBOOK_LIMITER", "namespace_id": "1003", "simple": { "limit": 30, "period": 60 } }
   ],
   "vars": {
-    "REFERENCE_PROVIDER": "fixture"
+    "REFERENCE_MODE": "demo"
   }
 }
