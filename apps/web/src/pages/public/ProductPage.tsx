@@ -1,0 +1,217 @@
+import { useCallback, type ReactNode } from 'react';
+import { useLocation, useParams } from 'react-router';
+import { Flag, ScanBarcode, ScanSearch } from 'lucide-react';
+import { Button, ButtonLink } from '../../components/Button';
+import { ErrorState } from '../../components/ErrorState';
+import { PageHeading } from '../../components/PageHeading';
+import { ReportSection } from '../../components/ReportSection';
+import { Skeleton } from '../../components/Skeleton';
+import { StatusMessage, type Tone } from '../../components/StatusMessage';
+import { RecordDetails } from '../../features/report/RecordDetails';
+import { RepeatScanNotice } from '../../features/scan/RepeatScanNotice';
+import { toRequestError } from '../../lib/errors';
+import { formatDate } from '../../lib/format';
+import { scanOnce } from '../../lib/v3/client';
+import type { ProductReport, Provenance } from '../../lib/v3/contract';
+import { useResource } from '../../lib/v3/useResource';
+
+const SERIOUS_WARNINGS = new Set(['BATCH_RECALLED', 'BATCH_BLOCKED', 'PACK_BLOCKED', 'BATCH_EXPIRED', 'BATCH_DIFFERS_FROM_PACK_RECORD']);
+const QUIET_WARNINGS = new Set(['SCAN_HISTORY_UNAVAILABLE', 'PACK_DATA_UNAVAILABLE', 'BATCH_DATA_UNAVAILABLE']);
+
+function warningTone(code: string): Tone {
+  if (SERIOUS_WARNINGS.has(code)) return 'risk';
+  return QUIET_WARNINGS.has(code) ? 'neutral' : 'warn';
+}
+
+function title(value: string | null): string | null {
+  return value ? value.charAt(0) + value.slice(1).toLowerCase().replace(/_/g, ' ') : null;
+}
+
+function formatDateTime(value: string | null): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' });
+}
+
+function Detail({ label, value }: { label: string; value: string | null | undefined }) {
+  if (!value) return null;
+  return (
+    <div>
+      <dt className="text-xs text-muted">{label}</dt>
+      <dd className="mt-0.5 break-words font-medium">{value}</dd>
+    </div>
+  );
+}
+
+function DetailCard({ children }: { children: ReactNode }) {
+  return <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border border-line bg-surface p-4 text-sm">{children}</dl>;
+}
+
+function Sources({ sources }: { sources: Provenance[] }) {
+  const used = sources.filter((source) => source.retrievalStatus !== 'NOT_ATTEMPTED');
+  const names = [...new Set(used.map((source) => source.sourceName))];
+  const retrievedAt = formatDateTime(used.find((source) => source.retrievedAt)?.retrievedAt ?? null);
+  if (sources.some((source) => source.isDemo)) {
+    return (
+      <StatusMessage tone="warn" title="Demo record: fictional company and product">
+        This comes from a simulated manufacturer system, built for demonstration. It is not real product data.
+        {retrievedAt && <span className="mt-1 block text-muted">Retrieved {retrievedAt}.</span>}
+      </StatusMessage>
+    );
+  }
+  if (names.length === 0) return null;
+  return <p className="text-sm text-muted">Source: {names.join(', ')}.{retrievedAt && ` Retrieved ${retrievedAt}.`}</p>;
+}
+
+function LookupResult({ report, reportLink, code }: { report: ProductReport; reportLink: string; code: string }) {
+  const { outcome, product, batch, pack, sources, warnings, explanation, notice, scanSignal, identityLevel, registrationReference } = report;
+
+  if (outcome === 'INVALID_IDENTIFIER') {
+    return (
+      <div className="mt-6 space-y-4">
+        <StatusMessage tone="warn" title="That is not a readable product code" role="alert">
+          Try scanning again, or type the number printed under the barcode. It may have been misread.
+        </StatusMessage>
+        <p className="break-all text-sm text-muted">Code: {code}</p>
+      </div>
+    );
+  }
+
+  if (outcome === 'SOURCE_UNAVAILABLE') {
+    return (
+      <div className="mt-6 space-y-4">
+        <StatusMessage tone="neutral" title="We could not check this code" role="alert">{explanation}</StatusMessage>
+        <p className="break-all text-sm text-muted">Code: {code}</p>
+      </div>
+    );
+  }
+
+  if (outcome === 'NOT_FOUND' || !product) {
+    return (
+      <div className="mt-6 space-y-4">
+        <StatusMessage tone="warn" title="No record found" role="alert">
+          The connected source has no product with this code. This does not prove the product is fake, because not every manufacturer is connected.
+        </StatusMessage>
+        <p className="break-all text-sm text-muted">Code: {code}</p>
+        <Sources sources={sources} />
+      </div>
+    );
+  }
+
+  // A repeat only means something for one serialized pack. Every pack of a product shares its barcode.
+  const repeat = identityLevel === 'PACK' && scanSignal && scanSignal.totalScans > 1 ? scanSignal : null;
+  const noteworthy = warnings.filter((warning) => warning.code !== 'SCAN_HISTORY_UNAVAILABLE');
+
+  return (
+    <div className="mt-6">
+      {noteworthy.length > 0 && (
+        <div className="mb-3 space-y-3">
+          {noteworthy.map((warning) => (
+            <StatusMessage key={warning.code} tone={warningTone(warning.code)} title={warning.explanation} role={SERIOUS_WARNINGS.has(warning.code) ? 'alert' : undefined} />
+          ))}
+        </div>
+      )}
+
+      <section aria-label="Product" className="rounded-lg border border-line bg-surface p-5">
+        {product.manufacturer && <p className="text-sm text-muted">{product.manufacturer}</p>}
+        <p className="mt-1 text-2xl font-semibold leading-tight tracking-tight">{product.productName}</p>
+        <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-line pt-4 text-sm">
+          <Detail label="Brand" value={product.brand} />
+          <Detail label="Strength" value={product.strength} />
+          <Detail label="Form" value={product.dosageForm} />
+          <Detail label="Category" value={product.category} />
+          <Detail label="Active ingredients" value={product.ingredients.join(', ') || null} />
+          <Detail label="NAFDAC number" value={product.nafdacNumber} />
+        </dl>
+      </section>
+
+      <div className="mt-3"><Sources sources={sources} /></div>
+
+      {repeat && <div className="mt-3"><RepeatScanNotice signal={repeat} reportLink={reportLink} /></div>}
+
+      {batch && (
+        <ReportSection title="Batch">
+          <DetailCard>
+            <Detail label="Batch number" value={batch.batchNumber} />
+            <Detail label="Status" value={title(batch.status)} />
+            <Detail label="Manufactured" value={formatDate(batch.manufacturingDate)} />
+            <Detail label="Expires" value={formatDate(batch.expiryDate)} />
+          </DetailCard>
+        </ReportSection>
+      )}
+
+      {pack && (
+        <ReportSection title="This pack">
+          <DetailCard>
+            <Detail label="Serial number" value={pack.serial} />
+            <Detail label="Status" value={title(pack.status)} />
+          </DetailCard>
+        </ReportSection>
+      )}
+
+      {registrationReference && (
+        <ReportSection title="Registration record">
+          <RecordDetails record={registrationReference} />
+        </ReportSection>
+      )}
+
+      <ReportSection title="What this cannot tell you">
+        <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed">
+          {identityLevel !== 'PACK' && <li>{explanation}</li>}
+          <li>A record does not prove this pack is genuine, because a code can be copied.</li>
+        </ul>
+        <span className="sr-only">{notice}</span>
+      </ReportSection>
+    </div>
+  );
+}
+
+export function ProductPage() {
+  const identifier = useParams().identifier ?? '';
+  const location = useLocation();
+  const { data, error, loading, reload } = useResource(useCallback(
+    () => scanOnce(location.key, identifier),
+    [location.key, identifier],
+  ));
+  const reportLink = `/report?code=${encodeURIComponent(identifier)}`;
+
+  return (
+    <div className="mx-auto max-w-xl px-4 py-8 sm:px-6 sm:py-12">
+      <PageHeading title="Product details" />
+
+      {loading && (
+        <div role="status" className="mt-6">
+          <p className="text-sm text-muted">Checking the manufacturer's records</p>
+          <Skeleton className="mt-3 h-48 w-full" />
+        </div>
+      )}
+
+      {error !== undefined && (
+        <div className="mt-6">
+          <ErrorState error={toRequestError(error)}>
+            <Button variant="secondary" onClick={reload}>Try again</Button>
+          </ErrorState>
+        </div>
+      )}
+
+      {data && <LookupResult report={data} reportLink={reportLink} code={identifier} />}
+
+      {!loading && (
+        <div className="mt-8 flex flex-col gap-3 border-t border-line pt-6">
+          <ButtonLink to="/scan">
+            <ScanBarcode aria-hidden="true" className="size-5" />
+            Scan another product
+          </ButtonLink>
+          <ButtonLink to="/inspect" variant="secondary">
+            <ScanSearch aria-hidden="true" className="size-5" />
+            Inspect the packaging
+          </ButtonLink>
+          <ButtonLink to={reportLink} variant="quiet">
+            <Flag aria-hidden="true" className="size-4" />
+            Report a concern
+          </ButtonLink>
+        </div>
+      )}
+    </div>
+  );
+}
