@@ -19,7 +19,7 @@ In the proposed model, manufacturers keep their products indexed in their own ER
 ## What it can and cannot tell you
 
 - A record does not prove a pack is genuine, because a code can be copied. So a found record is never called genuine.
-- A CounterfeitIQ QR code that the manufacturer's records don't hold is called fake, because only a connected manufacturer's packs carry these codes. This covers an unknown product, serial number or batch.
+- A CounterfeitIQ QR code that the manufacturer's records don't hold is called fake, because only a connected manufacturer's packs carry these codes. This covers an unknown product, serial number or batch, and a product with no batch on record, because the code has no parent.
 - A typed code or an ordinary barcode with no record is never called fake, and neither is any code when the source can't answer.
 - A repeat scan of a serialized pack is information to look into. A scan from the same device is treated as a likely rescan. A scan from another device asks whether you scratched the panel earlier: if so, it's likely your own scan, and if not, it's a high-risk duplicate. Codes that only identify the product are shared by every pack, so they never show repeats.
 

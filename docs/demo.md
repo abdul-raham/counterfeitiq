@@ -11,7 +11,7 @@ Everything scanned in this demo is fictional. Scanning uses no AI quota. Only pa
 | Image | Shows | Code, if you type it |
 |---|---|---|
 | `1-product.png` | Product and manufacturer only | `2000000001012` |
-| `2-product-no-batch-data.png` | A product with nothing else indexed | `2000000001029` |
+| `2-product-no-batch-data.png` | "This QR code is fake": a product with no batch, so no parent record | `2000000001029` |
 | `3-batch-code.png` | Adds batch details | `(01)02000000001012(10)DX2041` |
 | `4-serialized-pack.png` | Adds pack details. Scan from a second device for the scratch panel buttons | `(01)02000000001012(10)DX2041(17)280131(21)DEMOSN0001` |
 | `5-recalled-batch.png` | Recall warning | `(01)02000000001012(10)DX2042` |

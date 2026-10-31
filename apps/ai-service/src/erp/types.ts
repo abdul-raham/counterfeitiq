@@ -35,6 +35,8 @@ export interface ProductIdentity {
   ingredients: string[];
   category: string | null;
   packSize: string | null;
+  /** How many batches the source holds for this product. Null if it does not say. */
+  batchCount: number | null;
 }
 
 export type BatchStatus = 'ACTIVE' | 'BLOCKED' | 'RECALLED' | 'UNKNOWN';

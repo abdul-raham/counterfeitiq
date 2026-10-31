@@ -27,6 +27,7 @@ export interface ProductIdentity {
   ingredients: string[];
   category: string | null;
   packSize?: string | null;
+  batchCount?: number | null;
 }
 
 export interface BatchIdentity {

@@ -75,6 +75,8 @@ export const ITEMS: SeedItem[] = [
 ];
 
 export const LOTS: SeedLot[] = [
+  // Incomplete record: it has a batch, but the batch has no details.
+  { gtin: GTINS.placebrinJunior, lot_no: 'PJ1001', mfg_date: null, exp_date: null, lot_status: null },
   { gtin: GTINS.demozol500, lot_no: 'DX2041', mfg_date: '2026-02-01', exp_date: '2028-01-31', lot_status: 'released' },
   { gtin: GTINS.demozol500, lot_no: 'DX2042', mfg_date: '2026-03-01', exp_date: '2028-02-29', lot_status: 'recalled' },
   { gtin: GTINS.demozol500, lot_no: 'DX1999', mfg_date: '2023-01-01', exp_date: '2025-01-31', lot_status: 'released' },
