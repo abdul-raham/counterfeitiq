@@ -65,14 +65,6 @@ function Sources({ sources }: { sources: Provenance[] }) {
   const used = sources.filter((source) => source.retrievalStatus !== 'NOT_ATTEMPTED');
   const names = [...new Set(used.map((source) => source.sourceName))];
   const retrievedAt = formatDateTime(used.find((source) => source.retrievedAt)?.retrievedAt ?? null);
-  if (sources.some((source) => source.isDemo)) {
-    return (
-      <StatusMessage tone="warn" title="Demo record: fictional company and product">
-        This comes from a simulated manufacturer system, built for demonstration. It is not real product data.
-        {retrievedAt && <span className="mt-1 block text-muted">Retrieved {retrievedAt}.</span>}
-      </StatusMessage>
-    );
-  }
   if (names.length === 0) return null;
   return <p className="text-sm text-muted">Source: {names.join(', ')}.{retrievedAt && ` Retrieved ${retrievedAt}.`}</p>;
 }
