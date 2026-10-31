@@ -1,10 +1,9 @@
 import type { MedicineReference, ReferenceLookupResult } from '@counterfeitiq/shared';
-import { normalizeNafdacNumber } from '../services/normalize';
 
 // Fictional records only. A real registration number must never appear here,
 // because its details would be invented and could be mistaken for official data.
-const DEMO_FIXTURES: Record<string, MedicineReference> = {
-  A1123456: {
+const DEMO_FIXTURES = new Map<string, MedicineReference>([
+  ['A1-123456', {
     productName: 'Example Medicine',
     nafdacNumber: 'A1-123456',
     manufacturer: 'Example Pharma Ltd',
@@ -12,8 +11,27 @@ const DEMO_FIXTURES: Record<string, MedicineReference> = {
     ingredients: ['Exampleol'],
     registrationExpiry: '2028-03-14',
     retrievedAt: '2026-10-31T00:00:00.000Z',
-  },
-};
+  }],
+]);
+
+const LABEL_PREFIX = /^(?:NAFDAC\s*(?:REG(?:ISTRATION)?\.?)?\s*(?:NO\.?|NUMBER)?|REG(?:ISTRATION)?\.?\s*(?:NO\.?|NUMBER))\s*[:.-]?\s*/;
+
+/**
+ * Canonical form of a registration number. Hyphens stay significant, because
+ * A1-123456 and A11-23456 are different numbers. A label and letter case are not.
+ */
+export function canonicalNafdacNumber(value: string): string | null {
+  const number = value
+    .normalize('NFKC')
+    .toUpperCase()
+    .trim()
+    .replace(/[‐-―−]/g, '-')
+    .replace(LABEL_PREFIX, '')
+    .replace(/\s*-\s*/g, '-')
+    .replace(/\s/, '-');
+  if (!number || number.length > 20) return null;
+  return /^[A-Z0-9]+(?:-[A-Z0-9]+)*$/.test(number) && /\d/.test(number) ? number : null;
+}
 
 export interface LookupOptions {
   mode?: 'demo' | 'authorized_live';
@@ -24,7 +42,7 @@ export async function lookupMedicine(
   nafdacNumber: string,
   options: LookupOptions = {},
 ): Promise<ReferenceLookupResult> {
-  const normalized = normalizeNafdacNumber(nafdacNumber);
+  const normalized = canonicalNafdacNumber(nafdacNumber);
   const requestedAt = (options.now?.() ?? new Date()).toISOString();
 
   if (!normalized) {
@@ -57,7 +75,7 @@ export async function lookupMedicine(
     };
   }
 
-  const fixture = DEMO_FIXTURES[normalized];
+  const fixture = DEMO_FIXTURES.get(normalized);
   if (fixture) {
     return {
       status: 'FOUND',

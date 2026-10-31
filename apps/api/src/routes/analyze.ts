@@ -34,6 +34,30 @@ function isExtractedProduct(value: unknown): value is ExtractedProduct {
     && product.ingredients.every((ingredient) => typeof ingredient === 'string');
 }
 
+/** Reads at most maxBytes, so a chunked upload with no Content-Length cannot exhaust memory. */
+async function readBoundedForm(request: Request, contentType: string, maxBytes: number): Promise<FormData | null> {
+  const reader = request.body?.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (reader) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const body = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new Response(body, { headers: { 'content-type': contentType } }).formData();
+}
+
 export async function analyzeRequest(request: Request, dependencies: AnalyzeDependencies): Promise<Response> {
   if (request.method !== 'POST') return new Response(null, { status: 405, headers: { Allow: 'POST' } });
 
@@ -48,20 +72,20 @@ export async function analyzeRequest(request: Request, dependencies: AnalyzeDepe
     }
     const contentLength = Number(request.headers.get('content-length'));
     const maxMultipartBytes = MAX_IMAGE_BYTES + 256 * 1024;
-    if (Number.isFinite(contentLength) && contentLength > maxMultipartBytes) {
-      return apiErrorResponse({
-        code: 'FILE_TOO_LARGE',
-        message: 'Choose an image no larger than 4 MiB.',
-        retryable: false,
-      });
-    }
+    const tooLarge = () => apiErrorResponse({
+      code: 'FILE_TOO_LARGE',
+      message: 'Choose an image no larger than 4 MiB.',
+      retryable: false,
+    });
+    if (Number.isFinite(contentLength) && contentLength > maxMultipartBytes) return tooLarge();
 
-    let form: FormData;
+    let form: FormData | null;
     try {
-      form = await request.formData();
+      form = await readBoundedForm(request, contentType, maxMultipartBytes);
     } catch {
       return apiErrorResponse({ code: 'UNREADABLE_IMAGE', message: 'The uploaded image could not be read.', retryable: false });
     }
+    if (!form) return tooLarge();
     const image = form.get('image');
     if (!(image instanceof File)) {
       return apiErrorResponse({ code: 'UNREADABLE_IMAGE', message: 'The image field is missing or unreadable.', retryable: false });
