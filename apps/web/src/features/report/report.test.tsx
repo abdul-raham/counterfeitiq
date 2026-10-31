@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { formatDate } from '../../lib/format';
-import { analysis, foundFixture, notFound, unavailable } from '../../test/fixtures';
+import { analysis, fixture, foundFixture, notFound, unavailable } from '../../test/fixtures';
 import { Report } from './Report';
 import { buildComparisonRows, describeOutcome } from './outcome';
 
@@ -38,6 +38,16 @@ describe('describeOutcome', () => {
       verification: { status: 'INSUFFICIENT_EVIDENCE', categoryVerificationSupported: false },
     }));
     expect(outcome.title).toMatch(/not available for this product type/);
+  });
+
+  it('does not call an unread category unsupported', () => {
+    const outcome = describeOutcome(analysis({
+      extracted: { category: null },
+      reference: null,
+      verification: { status: 'INSUFFICIENT_EVIDENCE', categoryVerificationSupported: false },
+    }));
+    expect(outcome.title).toBe('We could not tell what type of product this is');
+    expect(outcome.suggestRetake).toBe(true);
   });
 
   it('asks for a clearer photo when nothing was read', () => {
@@ -91,6 +101,7 @@ describe('formatDate', () => {
   it('keeps month-only dates month-only', () => {
     expect(formatDate('2027-06')).toBe('June 2027');
     expect(formatDate('2028-03-14')).toBe('14 March 2028');
+    expect(formatDate('06/2027')).toBe('June 2027');
   });
 
   it('leaves unrecognised values as printed', () => {
@@ -127,6 +138,15 @@ describe('Report', () => {
     expect(screen.getByText('Registration records could not be checked')).toBeInTheDocument();
     expect(screen.getByText(/source could not be reached/)).toBeInTheDocument();
     expect(screen.queryByText(/live NAFDAC/)).not.toBeInTheDocument();
+  });
+
+  it('does not announce a demonstration record when a fixture lookup failed', () => {
+    render(<Report imageUrl={null} response={analysis({
+      reference: { status: 'SOURCE_UNAVAILABLE', record: null, provenance: { ...fixture, authoritative: false } },
+      verification: { status: 'REFERENCE_UNAVAILABLE' },
+    })} />);
+    expect(screen.getByText(/source could not be reached/)).toBeInTheDocument();
+    expect(screen.queryByText(/demonstration record/i)).not.toBeInTheDocument();
   });
 
   it('lists differences with both values', () => {

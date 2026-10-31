@@ -6,7 +6,9 @@ const MONTHS = [
 // Month-only expiry dates stay month-only: printing a day would invent precision.
 export function formatDate(value: string | null): string | null {
   if (!value) return null;
-  const match = /^(\d{4})-(\d{2})(?:-(\d{2}))?/.exec(value.trim());
+  const monthFirst = /^(\d{2})\/(\d{4})$/.exec(value.trim());
+  const iso = monthFirst ? `${monthFirst[2]}-${monthFirst[1]}` : value.trim();
+  const match = /^(\d{4})-(\d{2})(?:-(\d{2}))?/.exec(iso);
   const month = match ? MONTHS[Number(match[2]) - 1] : undefined;
   if (!match || !month) return value;
   return match[3] ? `${Number(match[3])} ${month} ${match[1]}` : `${month} ${match[1]}`;
