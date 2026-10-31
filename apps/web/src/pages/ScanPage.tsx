@@ -26,6 +26,15 @@ export function ScanPage() {
   // Leaving this page stops any request in flight.
   useEffect(() => cancel, [cancel]);
 
+  // The button that was focused disappears when analysis starts or ends.
+  const wasAnalyzing = useRef(false);
+  useEffect(() => {
+    const analyzing = phase === 'analyzing';
+    if (analyzing === wasAnalyzing.current) return;
+    wasAnalyzing.current = analyzing;
+    document.querySelector<HTMLElement>('main h1')?.focus();
+  }, [phase]);
+
   const handleCameraUnavailable = useCallback(() => {
     setCameraOpen(false);
     setCameraFailed(true);

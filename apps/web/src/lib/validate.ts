@@ -8,15 +8,39 @@ const VERIFICATION_STATUSES = [
   'REFERENCE_UNAVAILABLE',
 ];
 const EXPIRY_STATUSES = ['EXPIRED', 'NOT_EXPIRED', 'UNKNOWN'];
+const FIELD_MATCHES = ['MATCH', 'MISMATCH', 'UNKNOWN'];
+const LOOKUP_MODES = ['LIVE_OFFICIAL', 'DEMO_FIXTURE', 'NOT_EXECUTED'];
+const EXTRACTED_TEXT_FIELDS = [
+  'category', 'productName', 'brand', 'nafdacNumber', 'manufacturer',
+  'strength', 'batchNumber', 'manufacturingDate', 'expiryDate',
+];
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+function isNullableString(value: unknown): boolean {
+  return typeof value === 'string' || value === null;
+}
+
+function isStringArray(value: unknown): boolean {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string');
 }
 
 export function isApiErrorResponse(value: unknown): value is ApiErrorResponse {
   return isObject(value) && isObject(value.error)
     && typeof value.error.code === 'string'
     && typeof value.error.retryable === 'boolean';
+}
+
+function isMedicineRecord(value: unknown): boolean {
+  return isObject(value)
+    && typeof value.productName === 'string'
+    && typeof value.nafdacNumber === 'string'
+    && isNullableString(value.manufacturer)
+    && isNullableString(value.strength)
+    && isStringArray(value.ingredients)
+    && isNullableString(value.registrationExpiry);
 }
 
 // Provenance rules are checked at runtime because they are what stops a demo
@@ -29,31 +53,39 @@ export function isReferenceLookupResult(value: unknown): value is ReferenceLooku
 
   switch (value.status) {
     case 'FOUND':
-      return isObject(value.record)
-        && typeof value.record.productName === 'string'
-        && typeof value.record.nafdacNumber === 'string'
-        && Array.isArray(value.record.ingredients)
-        && (live || fixture);
+      return isMedicineRecord(value.record) && (live || fixture);
     case 'NOT_FOUND':
       return value.record === null && live;
     case 'SOURCE_UNAVAILABLE':
-      return value.record === null && authoritative === false;
+      return value.record === null && authoritative === false && LOOKUP_MODES.includes(mode as string);
     default:
       return false;
   }
+}
+
+function isFinding(value: unknown): boolean {
+  return isObject(value)
+    && typeof value.code === 'string'
+    && typeof value.field === 'string'
+    && typeof value.explanation === 'string'
+    && FIELD_MATCHES.includes(value.status as string)
+    && isNullableString(value.packagingValue)
+    && isNullableString(value.referenceValue);
 }
 
 export function isAnalysisResponse(value: unknown): value is AnalysisResponse {
   if (!isObject(value) || !isObject(value.extracted) || !isObject(value.verification)) return false;
   const { verification, extracted, reference } = value;
 
-  if (!Array.isArray(extracted.ingredients)) return false;
+  if (!isStringArray(extracted.ingredients)) return false;
+  if (!EXTRACTED_TEXT_FIELDS.every((field) => isNullableString(extracted[field]))) return false;
   if (verification.physicalAuthenticityConfirmed !== false) return false;
   if (!VERIFICATION_STATUSES.includes(verification.status as string)) return false;
   if (!EXPIRY_STATUSES.includes(verification.packageExpiryStatus as string)) return false;
   if (!EXPIRY_STATUSES.includes(verification.registrationExpiryStatus as string)) return false;
   if (typeof verification.summary !== 'string') return false;
-  if (!Array.isArray(verification.findings) || !Array.isArray(verification.recommendedActions)) return false;
+  if (!Array.isArray(verification.findings) || !verification.findings.every(isFinding)) return false;
+  if (!isStringArray(verification.recommendedActions)) return false;
   if (reference !== null && !isReferenceLookupResult(reference)) return false;
 
   // A verdict must agree with the lookup it claims to come from.

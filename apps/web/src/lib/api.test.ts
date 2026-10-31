@@ -94,6 +94,19 @@ describe('response guards', () => {
     expect(isAnalysisResponse(claim)).toBe(false);
   });
 
+  it.each([
+    ['a null finding', { verification: { findings: [null as never] } }],
+    ['a finding with no status', { verification: { findings: [{ code: 'A', field: 'b', explanation: 'c' } as never] } }],
+    ['an action that is not text', { verification: { recommendedActions: [{ a: 1 } as never] } }],
+    ['a product name that is not text', { extracted: { productName: 5 as never } }],
+  ])('refuses %s', (_name, overrides) => {
+    expect(isAnalysisResponse(analysis(overrides))).toBe(false);
+  });
+
+  it('refuses an unavailable lookup with no mode', () => {
+    expect(isReferenceLookupResult({ status: 'SOURCE_UNAVAILABLE', record: null, provenance: { authoritative: false } })).toBe(false);
+  });
+
   it('refuses NOT_FOUND from a demo fixture', () => {
     expect(isReferenceLookupResult({
       status: 'NOT_FOUND',

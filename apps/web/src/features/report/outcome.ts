@@ -28,9 +28,9 @@ export function describeOutcome({ extracted, reference, verification }: Analysis
 
   switch (verification.status) {
     case 'REGISTRATION_DETAILS_MATCH':
-      // Never green over an expired pack: the match is not the news the reader needs.
+      // Never green over an expired date: the match is not the news the reader needs.
       return outcome(
-        verification.packageExpiryStatus === 'EXPIRED' ? 'warn' : 'ok',
+        verification.packageExpiryStatus === 'EXPIRED' || verification.registrationExpiryStatus === 'EXPIRED' ? 'warn' : 'ok',
         demo ? 'Details match a demonstration record' : 'Registration details match',
         "This does not prove this pack is genuine. Counterfeit packaging can copy a real product's details.",
       );
