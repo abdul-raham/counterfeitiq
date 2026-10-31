@@ -8,14 +8,18 @@ import { RepeatScanNotice, type PanelAnswer } from './RepeatScanNotice';
 
 type MatchAnswer = 'yes' | 'no' | 'unsure';
 
+/** A pharmacist can only help with a medicine. This check also covers water, food and other products. */
+export function whatToDoWithIt(report: ProductReport): string {
+  return report.product?.category === 'medicine' ? 'Show it to a pharmacist.' : 'Keep the package and your receipt.';
+}
+
 function checklist({ product, batch, registrationReference: registration }: ProductReport) {
   const rows: [string, string | null | undefined][] = [
     ['Product name', product?.productName],
     ['Brand', product?.brand],
-    ['Strength', product?.strength],
     ['Batch', batch?.batchNumber],
     ['Expiry', formatDate(batch?.expiryDate ?? null)],
-    ['Pack size', registration?.packSize],
+    ['Pack size', product?.packSize ?? registration?.packSize],
     ['Manufacturer', product?.manufacturer ?? registration?.listedManufacturer],
     ['Applicant', registration?.applicant],
     ['NAFDAC number', product?.nafdacNumber],
@@ -24,6 +28,8 @@ function checklist({ product, batch, registrationReference: registration }: Prod
 }
 
 interface FinalResultProps {
+  care: string;
+  isMedicine: boolean;
   match: MatchAnswer;
   mismatches: string[];
   panel: PanelAnswer | null;
@@ -31,26 +37,26 @@ interface FinalResultProps {
   reportLink: string;
 }
 
-function FinalResult({ match, mismatches, panel, hasSeriousWarning, reportLink }: FinalResultProps) {
+function FinalResult({ care, isMedicine, match, mismatches, panel, hasSeriousWarning, reportLink }: FinalResultProps) {
   const report = <Link to={reportLink} className="underline underline-offset-4">See how to report a concern</Link>;
   if (match === 'no') {
     return (
       <StatusMessage tone="risk" title="This package does not match the record" role="status">
         {mismatches.length > 0 && <>What differs: {mismatches.join(', ')}. </>}
-        Do not use this medicine. Show it to a pharmacist. {report}.
+        Do not use this product. {care} {report}.
       </StatusMessage>
     );
   }
   if (panel === 'intact') {
     return (
       <StatusMessage tone="risk" title="Do not use this pack" role="status">
-        Whatever the package says, its hidden code was already scanned elsewhere. Show it to a pharmacist. {report}.
+        Whatever the package says, its hidden code was already scanned elsewhere. {care} {report}.
       </StatusMessage>
     );
   }
   if (match === 'unsure') {
     return (
-      <StatusMessage tone="warn" title="Ask a pharmacist to compare" role="status">
+      <StatusMessage tone="warn" title={`Ask ${isMedicine ? 'a pharmacist' : 'the seller'} to compare`} role="status">
         Show them this page and the package before using it.
       </StatusMessage>
     );
@@ -58,7 +64,7 @@ function FinalResult({ match, mismatches, panel, hasSeriousWarning, reportLink }
   if (panel === 'scratched') {
     return (
       <StatusMessage tone="warn" title="The details match, but ask the seller about the earlier scan" role="status">
-        Don't use it until you have an answer, or a pharmacist has checked it.
+        Don't use it until you have an answer.
       </StatusMessage>
     );
   }
@@ -77,6 +83,7 @@ export function PackCheck({ report, reportLink, hasSeriousWarning }: { report: P
   const [match, setMatch] = useState<MatchAnswer | null>(null);
   const [mismatches, setMismatches] = useState<string[]>([]);
   const rows = checklist(report);
+  const care = whatToDoWithIt(report);
   // A repeat only means something for one serialized pack. Every pack of a product shares its product code.
   const repeat = report.identityLevel === 'PACK' && report.scanSignal && report.scanSignal.totalScans > 1 ? report.scanSignal : null;
   const scannedOnlyHere = repeat?.distinctDevices === 1;
@@ -88,7 +95,7 @@ export function PackCheck({ report, reportLink, hasSeriousWarning }: { report: P
 
   return (
     <div className="mt-3 space-y-3">
-      {repeat && <RepeatScanNotice signal={repeat} scannedOnlyHere={scannedOnlyHere} answer={panel} onAnswer={setPanel} reportLink={reportLink} />}
+      {repeat && <RepeatScanNotice care={care} signal={repeat} scannedOnlyHere={scannedOnlyHere} answer={panel} onAnswer={setPanel} reportLink={reportLink} />}
 
       <section aria-labelledby="pack-check" className="rounded-lg border border-line bg-surface p-5">
         <h2 id="pack-check" className="font-semibold">Check the package in your hand</h2>
@@ -124,10 +131,10 @@ export function PackCheck({ report, reportLink, hasSeriousWarning }: { report: P
       </section>
 
       {match && waitingForPanel && match !== 'no' && (
-        <p className="text-sm text-muted">Answer the scratch panel question above to see your result.</p>
+        <p className="text-sm text-muted">Tell us about the scratch panel above to see your result.</p>
       )}
       {match && (!waitingForPanel || match === 'no') && (
-        <FinalResult match={match} mismatches={mismatches} panel={panel} hasSeriousWarning={hasSeriousWarning} reportLink={reportLink} />
+        <FinalResult care={care} isMedicine={report.product?.category === 'medicine'} match={match} mismatches={mismatches} panel={panel} hasSeriousWarning={hasSeriousWarning} reportLink={reportLink} />
       )}
     </div>
   );

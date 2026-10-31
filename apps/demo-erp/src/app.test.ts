@@ -8,7 +8,7 @@ const get = (path: string, token = 'token') =>
 
 describe('seed data', () => {
   it('has three fictional companies with valid, restricted-range GTINs', () => {
-    expect(new Set(ITEMS.map((item) => item.company).filter(Boolean)).size).toBe(3);
+    expect(new Set(ITEMS.map((item) => item.company).filter(Boolean)).size).toBe(4);
     expect(ITEMS.every((item) => /^\d{14}$/.test(item.gtin) && item.gtin.startsWith('0200'))).toBe(true);
     expect(gtin14('400638133393')).toBe('04006381333931');
   });

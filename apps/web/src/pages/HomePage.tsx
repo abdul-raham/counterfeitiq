@@ -18,7 +18,7 @@ export function HomePage() {
           Know what you're buying.
         </h1>
         <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted sm:text-xl">
-          Scan a medicine's QR code to see what its manufacturer has on record.
+          Scan a product's QR code to see what its manufacturer has on record.
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <ButtonLink to="/scan">

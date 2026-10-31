@@ -14,7 +14,7 @@ CounterfeitIQ reads a product photo and compares what it finds with the NAFDAC G
 - Do not put debug fields from Greenbook responses in public examples or logs.
 
 - A GTIN alone identifies a trade item, never one pack. Only a serial number reaches `PACK`, and only a known pack gets a scan signal.
-- ERP failures are `SOURCE_UNAVAILABLE`, never `NOT_FOUND`. A repeat from another device on a pack whose scratch panel was intact is a high-risk duplicate, by the product owner's decision. Repeats are never called fake.
+- ERP failures are `SOURCE_UNAVAILABLE`, never `NOT_FOUND`. A repeat from another device on a pack whose panel the user scratched themselves is a high-risk duplicate, by the product owner's decision. Repeats are never called fake.
 - Simulated ERP data stays marked as demo in the API (`isDemo`), and the site says the demonstration is fictional on the home, `/demo` and help pages. It never reaches a live registry. No real manufacturer or NAFDAC partnership exists, so never imply one.
 
 ## Before finishing work

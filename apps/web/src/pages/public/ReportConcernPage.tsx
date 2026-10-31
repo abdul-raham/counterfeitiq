@@ -30,7 +30,7 @@ export function ReportConcernPage() {
 
       <ol className="mt-6 list-decimal space-y-3 pl-5 leading-relaxed">
         <li><span className="font-medium">Do not use the product yet.</span> Keep the pack and your receipt if you have them.</li>
-        <li><span className="font-medium">Show it to a pharmacist.</span> If you have already taken it and feel unwell, speak to a pharmacist or doctor now.</li>
+        <li><span className="font-medium">If it is a medicine, show it to a pharmacist.</span> If you have already used a product and feel unwell, speak to a pharmacist or doctor now.</li>
         <li><span className="font-medium">Report it to NAFDAC.</span> Use the contact details on NAFDAC's official website.</li>
       </ol>
 
