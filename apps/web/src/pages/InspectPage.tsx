@@ -15,7 +15,7 @@ import { useScan } from '../features/scanner/ScanContext';
 
 const ACCEPT = ACCEPTED_IMAGE_TYPES.join(',');
 
-export function ScanPage() {
+export function InspectPage() {
   const navigate = useNavigate();
   const { file, previewUrl, phase, error, selectFile, analyze, cancel } = useScan();
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -59,7 +59,7 @@ export function ScanPage() {
   }
 
   async function handleAnalyze() {
-    if (await analyze()) navigate('/report');
+    if (await analyze()) navigate('/inspect/report');
   }
 
   const inputs = (
@@ -72,7 +72,7 @@ export function ScanPage() {
   if (phase === 'analyzing') {
     return (
       <div className="mx-auto max-w-xl px-4 py-8 sm:px-6 sm:py-12">
-        <PageHeading title="Checking your product" />
+        <PageHeading title="Inspecting the packaging" />
         <div className="mt-6"><AnalysisState previewUrl={previewUrl} onCancel={cancel} /></div>
       </div>
     );
@@ -83,8 +83,8 @@ export function ScanPage() {
   return (
     <div className="mx-auto max-w-xl px-4 py-8 sm:px-6 sm:py-12">
       {inputs}
-      <PageHeading title="Scan a product">
-        Nothing is uploaded until you press Check this product.
+      <PageHeading title="Inspect packaging">
+        Optional. An AI reads the packaging and compares it with registration records. This is separate from checking a scratch code. Nothing is uploaded until you press Check this product.
       </PageHeading>
 
       {error && (

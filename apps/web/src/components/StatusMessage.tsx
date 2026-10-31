@@ -1,13 +1,14 @@
 import type { ReactNode } from 'react';
 import { CircleAlert, CircleCheck, CircleHelp, OctagonAlert, type LucideIcon } from 'lucide-react';
 
-export type Tone = 'ok' | 'warn' | 'risk' | 'neutral';
+export type Tone = 'ok' | 'warn' | 'risk' | 'neutral' | 'accent';
 
 export const toneStyles: Record<Tone, { box: string; text: string; icon: LucideIcon }> = {
   ok: { box: 'border-ok-line bg-ok-soft', text: 'text-ok', icon: CircleCheck },
   warn: { box: 'border-warn-line bg-warn-soft', text: 'text-warn', icon: CircleAlert },
   risk: { box: 'border-risk-line bg-risk-soft', text: 'text-risk', icon: OctagonAlert },
   neutral: { box: 'border-line bg-surface', text: 'text-ink', icon: CircleHelp },
+  accent: { box: 'border-accent-line bg-accent-soft', text: 'text-accent', icon: CircleCheck },
 };
 
 interface StatusMessageProps {
