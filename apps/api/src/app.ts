@@ -1,4 +1,5 @@
-import { createReferenceAdapter, type ReferenceMode } from './adapters/reference';
+import type { RateLimiter } from './adapters/greenbook';
+import { createReferenceAdapter } from './adapters/reference';
 import { extractProduct } from './ai/extraction';
 import { analyzeRequest, type AnalyzeDependencies } from './routes/analyze';
 import { apiErrorResponse } from './routes/errors';
@@ -8,7 +9,9 @@ export interface Env {
   ENVIRONMENT?: string;
   GEMMA_API_KEY?: string;
   GEMMA_API_URL?: string;
-  REFERENCE_MODE?: ReferenceMode;
+  REFERENCE_PROVIDER?: string;
+  GREENBOOK_ACCESS_APPROVAL?: string;
+  GREENBOOK_LIMITER?: RateLimiter;
 }
 
 const CORS_HEADERS: Record<string, string> = {
@@ -32,7 +35,9 @@ export function withCors(response: Response): Response {
 
 export function createDependencies(env: Env = {}): AnalyzeDependencies {
   const referenceAdapter = createReferenceAdapter({
-    mode: env.REFERENCE_MODE ?? 'demo',
+    provider: env.REFERENCE_PROVIDER,
+    greenbookAccessApproval: env.GREENBOOK_ACCESS_APPROVAL,
+    greenbook: { limiter: env.GREENBOOK_LIMITER },
   });
 
   return {

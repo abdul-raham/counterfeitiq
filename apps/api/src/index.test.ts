@@ -66,8 +66,8 @@ describe('Cloudflare Worker entrypoint', () => {
 
 describe('honest results', () => {
   it('selects a reference adapter without changing the route dependency contract', async () => {
-    const demo = createDependencies({ REFERENCE_MODE: 'demo' });
-    const live = createDependencies({ REFERENCE_MODE: 'authorized_live' });
+    const demo = createDependencies({ REFERENCE_PROVIDER: 'fixture' });
+    const live = createDependencies({ REFERENCE_PROVIDER: 'greenbook' });
 
     await expect(demo.lookupMedicine('A1-123456')).resolves.toMatchObject({
       status: 'FOUND',
@@ -100,8 +100,8 @@ describe('honest results', () => {
     },
   );
 
-  it('does not serve fixtures as live data in authorized_live mode', async () => {
-    const response = await worker.fetch(lookup('A1-123456'), { REFERENCE_MODE: 'authorized_live' });
+  it('does not serve fixtures as live data when the greenbook provider is selected', async () => {
+    const response = await worker.fetch(lookup('A1-123456'), { REFERENCE_PROVIDER: 'greenbook' });
     const body = await response.json() as { status: string; record: unknown; provenance: { mode: string } };
     expect(body.status).toBe('SOURCE_UNAVAILABLE');
     expect(body.record).toBeNull();

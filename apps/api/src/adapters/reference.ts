@@ -1,5 +1,7 @@
 import type { MedicineReference, ReferenceLookupResult } from '@counterfeitiq/shared';
 import { normalizeNafdacNumber } from '../services/normalize';
+import { INVALID_NUMBER_NOTE, notExecuted, type ReferenceAdapter } from './contract';
+import { createGreenbookAdapter, type GreenbookOptions } from './greenbook';
 
 // Fictional records only. A real registration number must never appear here,
 // because its details would be invented and could be mistaken for official data.
@@ -15,87 +17,66 @@ const DEMO_FIXTURES: Record<string, MedicineReference> = {
   },
 };
 
-export interface LookupOptions {
-  mode?: 'demo' | 'authorized_live';
+export type { ReferenceAdapter } from './contract';
+
+export interface ReferenceOptions {
+  /** REFERENCE_PROVIDER: "fixture" (the default) or "greenbook". */
+  provider?: string;
+  /** Where NAFDAC's permission is recorded. Greenbook requests stay off without it. */
+  greenbookAccessApproval?: string;
+  greenbook?: GreenbookOptions;
   now?: () => Date;
 }
 
-export interface ReferenceAdapter {
-  lookupMedicine(nafdacNumber: string): Promise<ReferenceLookupResult>;
-}
-
-export type ReferenceMode = NonNullable<LookupOptions['mode']>;
-
-export function createReferenceAdapter(
-  options: LookupOptions = {},
-): ReferenceAdapter {
+function createFixtureAdapter(now: () => Date): ReferenceAdapter {
   return {
-    lookupMedicine: (nafdacNumber: string) => lookupMedicine(nafdacNumber, options),
-  };
-}
+    async lookupMedicine(nafdacNumber: string): Promise<ReferenceLookupResult> {
+      const normalized = normalizeNafdacNumber(nafdacNumber);
+      if (!normalized) return notExecuted(INVALID_NUMBER_NOTE);
 
-export async function lookupMedicine(
-  nafdacNumber: string,
-  options: LookupOptions = {},
-): Promise<ReferenceLookupResult> {
-  const normalized = normalizeNafdacNumber(nafdacNumber);
-  const requestedAt = (options.now?.() ?? new Date()).toISOString();
+      const requestedAt = now().toISOString();
+      const fixture = DEMO_FIXTURES[normalized];
+      if (fixture) {
+        return {
+          status: 'FOUND',
+          record: fixture,
+          provenance: {
+            source: 'DEMO_FIXTURE',
+            mode: 'DEMO_FIXTURE',
+            authoritative: false,
+            requestedAt,
+            note: 'Fictional demo fixture for evaluation and demonstration.',
+          },
+        };
+      }
 
-  if (!normalized) {
-    return {
-      status: 'SOURCE_UNAVAILABLE',
-      record: null,
-      provenance: {
-        source: 'NONE',
-        mode: 'NOT_EXECUTED',
-        authoritative: false,
-        requestedAt: null,
-        note: 'Invalid or missing NAFDAC registration number.',
-      },
-    };
-  }
-
-  // No permitted live Greenbook integration exists yet. Until one does, live mode
-  // reports that nothing was checked instead of serving fixtures or inventing results.
-  if (options.mode === 'authorized_live') {
-    return {
-      status: 'SOURCE_UNAVAILABLE',
-      record: null,
-      provenance: {
-        source: 'NONE',
-        mode: 'NOT_EXECUTED',
-        authoritative: false,
-        requestedAt: null,
-        note: 'Live NAFDAC lookup is not available yet.',
-      },
-    };
-  }
-
-  const fixture = DEMO_FIXTURES[normalized];
-  if (fixture) {
-    return {
-      status: 'FOUND',
-      record: fixture,
-      provenance: {
-        source: 'DEMO_FIXTURE',
-        mode: 'DEMO_FIXTURE',
-        authoritative: false,
-        requestedAt,
-        note: 'Fictional demo fixture for evaluation and demonstration.',
-      },
-    };
-  }
-
-  // A fixture miss says nothing about NAFDAC, so it can never be NOT_FOUND.
-  return {
-    status: 'SOURCE_UNAVAILABLE',
-    record: null,
-    provenance: {
-      source: 'DEMO_FIXTURE',
-      mode: 'DEMO_FIXTURE',
-      authoritative: false,
-      requestedAt,
-      note: 'Live NAFDAC lookup requires explicit authorization.',
+      // A fixture miss says nothing about NAFDAC, so it can never be NOT_FOUND.
+      return {
+        status: 'SOURCE_UNAVAILABLE',
+        record: null,
+        provenance: {
+          source: 'DEMO_FIXTURE',
+          mode: 'DEMO_FIXTURE',
+          authoritative: false,
+          requestedAt,
+          note: 'Demonstration mode: this number was not checked against NAFDAC.',
+        },
+      };
     },
   };
+}
+
+function refusingAdapter(note: string): ReferenceAdapter {
+  return { lookupMedicine: async () => notExecuted(note) };
+}
+
+export function createReferenceAdapter(options: ReferenceOptions = {}): ReferenceAdapter {
+  const provider = options.provider?.trim().toLowerCase() || 'fixture';
+  if (provider === 'fixture') return createFixtureAdapter(options.now ?? (() => new Date()));
+  // Anything else fails closed: a typo must not quietly serve demo data.
+  if (provider !== 'greenbook') return refusingAdapter('The registration source is not configured.');
+  if (!options.greenbookAccessApproval?.trim()) {
+    return refusingAdapter('Live NAFDAC lookup is not enabled.');
+  }
+  return createGreenbookAdapter(options.greenbook);
 }
