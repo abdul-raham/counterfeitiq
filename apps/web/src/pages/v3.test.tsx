@@ -111,6 +111,22 @@ describe('scanning', () => {
     expect(screen.getByLabelText(/Or type the code/)).toBeInTheDocument();
   });
 
+  it('counts a QR link opened again in the same tab, but not a reload', async () => {
+    const fetchMock = serve(found);
+    const pageLoad = async (type: string) => {
+      vi.resetModules();
+      const entries = vi.spyOn(performance, 'getEntriesByType').mockReturnValue([{ type }] as never);
+      const client = await import('../lib/v3/client');
+      await client.scanOnce('default', 'CODE-LINK');
+      entries.mockRestore();
+    };
+    await pageLoad('navigate');
+    await pageLoad('navigate');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    await pageLoad('reload');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it('sends one request per navigation, even if an effect runs twice', async () => {
     const fetchMock = serve(found);
     await Promise.all([scanOnce('nav-a', 'CODE-A'), scanOnce('nav-a', 'CODE-A')]);
