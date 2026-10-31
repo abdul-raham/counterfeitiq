@@ -1,6 +1,8 @@
 import type { MedicineReference, ReferenceLookupResult } from '@counterfeitiq/shared';
 import { normalizeNafdacNumber } from '../services/normalize';
 
+// Fictional records only. A real registration number must never appear here,
+// because its details would be invented and could be mistaken for official data.
 const DEMO_FIXTURES: Record<string, MedicineReference> = {
   A1123456: {
     productName: 'Example Medicine',
@@ -9,15 +11,6 @@ const DEMO_FIXTURES: Record<string, MedicineReference> = {
     strength: '500 mg',
     ingredients: ['Exampleol'],
     registrationExpiry: '2028-03-14',
-    retrievedAt: '2026-10-31T00:00:00.000Z',
-  },
-  A6100103: {
-    productName: 'Recombinant Hepatitis B Vaccine',
-    nafdacNumber: 'A6-100103',
-    manufacturer: 'Biological E. Limited',
-    strength: '20 mcg/0.5 ml',
-    ingredients: ['Hepatitis B Surface Antigen'],
-    registrationExpiry: '2027-10-31',
     retrievedAt: '2026-10-31T00:00:00.000Z',
   },
 };
@@ -48,21 +41,9 @@ export async function lookupMedicine(
     };
   }
 
-  // Simulated test numbers
-  if (normalized === 'A1000000') {
-    return {
-      status: 'NOT_FOUND',
-      record: null,
-      provenance: {
-        source: 'NAFDAC_GREENBOOK',
-        mode: 'LIVE_OFFICIAL',
-        authoritative: true,
-        requestedAt,
-      },
-    };
-  }
-
-  if (normalized === 'A1999999') {
+  // No permitted live Greenbook integration exists yet. Until one does, live mode
+  // reports that nothing was checked instead of serving fixtures or inventing results.
+  if (options.mode === 'authorized_live') {
     return {
       status: 'SOURCE_UNAVAILABLE',
       record: null,
@@ -71,7 +52,7 @@ export async function lookupMedicine(
         mode: 'NOT_EXECUTED',
         authoritative: false,
         requestedAt: null,
-        note: 'Simulated source unavailability.',
+        note: 'Live NAFDAC lookup is not available yet.',
       },
     };
   }
@@ -91,7 +72,7 @@ export async function lookupMedicine(
     };
   }
 
-  // Fallback for unregistered demo lookups
+  // A fixture miss says nothing about NAFDAC, so it can never be NOT_FOUND.
   return {
     status: 'SOURCE_UNAVAILABLE',
     record: null,
@@ -100,7 +81,7 @@ export async function lookupMedicine(
       mode: 'DEMO_FIXTURE',
       authoritative: false,
       requestedAt,
-      note: 'No matching demo fixture; live NAFDAC lookup requires explicit authorization.',
+      note: 'Live NAFDAC lookup requires explicit authorization.',
     },
   };
 }
