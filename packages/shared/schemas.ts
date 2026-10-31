@@ -140,6 +140,9 @@ export function isMedicineCategory(category: string | null): boolean {
     'pharmaceutical',
     'pharmaceutical product',
     'medicinal product',
+    'vaccine',
+    'vaccines',
+    'herbal medicine',
   ]).has(category.trim().toLowerCase());
 }
 

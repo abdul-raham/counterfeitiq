@@ -74,6 +74,14 @@ export function Report({ response, imageUrl }: { response: AnalysisResponse; ima
         </div>
       )}
 
+      {verification.registrationExpiryStatus === 'EXPIRED' && (
+        <div className="mt-3">
+          <StatusMessage tone="warn" title={`The expiry date on the ${recordName} has passed`}>
+            This is separate from the date printed on the pack. Confirm the current registration status with NAFDAC.
+          </StatusMessage>
+        </div>
+      )}
+
       <div className="mt-4"><SourceNotice reference={reference} /></div>
 
       {differences.length > 0 && (
@@ -135,7 +143,7 @@ export function Report({ response, imageUrl }: { response: AnalysisResponse; ima
               />
               <ExpiryCell
                 title="Registration expiry"
-                source={`From the ${recordName}`}
+                source={record ? `From the ${recordName}` : 'No record was checked'}
                 date={record?.registrationExpiry ?? null}
                 status={verification.registrationExpiryStatus}
               />
