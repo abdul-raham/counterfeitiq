@@ -282,32 +282,90 @@ describe('product result', () => {
 });
 
 describe('repeat scans', () => {
-  const repeat = { ...pack, scanSignal: { ...pack.scanSignal, totalScans: 3, distinctDevices: 2 } };
+  const elsewhere = { ...pack, scanSignal: { ...pack.scanSignal, totalScans: 3, distinctDevices: 2 } };
+  const sameDevice = { ...pack, scanSignal: { ...pack.scanSignal, totalScans: 3, distinctDevices: 1 } };
 
-  it('says how often, without calling the product fake', async () => {
-    serve(repeat);
-    const { container } = renderAt('/product/x-repeat');
+  it('treats scans from this device alone as a likely rescan, with no question', async () => {
+    serve(sameDevice);
+    renderAt('/product/x-rescan');
+    expect(await screen.findByText(/likely your own rescan/)).toBeInTheDocument();
+    expect(screen.queryByText(/scratch panel intact/)).not.toBeInTheDocument();
+  });
+
+  it('asks about the panel for a scan from elsewhere, and never says fake', async () => {
+    serve(elsewhere);
+    const { container } = renderAt('/product/x-elsewhere');
     expect(await screen.findByText('This pack code has been scanned 2 times before')).toBeInTheDocument();
-    expect(screen.getByText(/does not mean the product is fake/)).toBeInTheDocument();
-    expect(screen.getByText('Is this pack still sealed?')).toBeInTheDocument();
-    const { violations } = await axe.run(container, { rules: { 'color-contrast': { enabled: false } } });
-    expect(violations.map((item) => item.id)).toEqual([]);
+    expect(screen.getByText('Was the scratch panel intact before this scan?')).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/fake/i);
+    expect((await axe.run(container, { rules: { 'color-contrast': { enabled: false } } })).violations.map((item) => item.id)).toEqual([]);
   });
 
-  it('advises a pharmacist for a sealed pack, without a verdict', async () => {
-    serve(repeat);
-    const { container } = renderAt('/product/x-sealed');
-    await user.click(await screen.findByRole('button', { name: "Yes, it's sealed" }));
-    expect(screen.getByText('Have this pack checked before using it')).toBeInTheDocument();
-    expect(screen.getByText(/may have been copied/)).toBeInTheDocument();
-    expect(container.textContent).not.toMatch(/this is (a )?(fake|counterfeit)/i);
+  it('calls an intact panel a high-risk duplicate, without calling it fake', async () => {
+    serve(elsewhere);
+    const { container } = renderAt('/product/x-intact');
+    await user.click(await screen.findByRole('button', { name: 'Yes, it was intact' }));
+    expect(screen.getByText('High-risk duplicate')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Yes' }));
+    expect(screen.getByText('Do not use this pack')).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/fake/i);
   });
 
-  it('points to the seller for an opened pack', async () => {
-    serve(repeat);
-    renderAt('/product/x-opened');
-    await user.click(await screen.findByRole('button', { name: "No, it's been opened" }));
-    expect(screen.getByText('Ask the seller about this pack')).toBeInTheDocument();
+  it('sends a scratched panel to the seller', async () => {
+    serve(elsewhere);
+    renderAt('/product/x-scratched');
+    await user.click(await screen.findByRole('button', { name: 'No, it was already scratched' }));
+    expect(screen.getByText('Repeated scan: ask the seller about this pack')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Yes' }));
+    expect(screen.getByText('The details match, but ask the seller about the earlier scan')).toBeInTheDocument();
+  });
+
+  it('holds the final result until the panel question is answered', async () => {
+    serve(elsewhere);
+    renderAt('/product/x-wait');
+    await user.click(await screen.findByRole('button', { name: 'Yes' }));
+    expect(screen.getByText(/Answer the scratch panel question/)).toBeInTheDocument();
+    expect(screen.queryByText("The details match the manufacturer's record")).not.toBeInTheDocument();
+  });
+});
+
+describe('package checklist', () => {
+  it('lists only details on record, and says a match is not proof', async () => {
+    serve(found);
+    const { container } = renderAt('/product/c-yes');
+    expect(await screen.findByText('Check the package in your hand')).toBeInTheDocument();
+    expect(screen.getByText('Strength: 500 mg')).toBeInTheDocument();
+    expect(screen.queryByText(/^Batch:/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Yes' }));
+    expect(screen.getByText("The details match the manufacturer's record")).toBeInTheDocument();
+    expect(screen.getByText(/can't prove what is inside the pack/)).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/genuine product|verified/i);
+  });
+
+  it('asks what differs on No, and names it in the result', async () => {
+    serve(found);
+    const { container } = renderAt('/product/c-no');
+    await user.click(await screen.findByRole('button', { name: 'No' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Strength' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Something else' }));
+    expect(screen.getByText('This package does not match the record')).toBeInTheDocument();
+    expect(screen.getByText(/What differs: Strength, Something else/)).toBeInTheDocument();
+    expect((await axe.run(container, { rules: { 'color-contrast': { enabled: false } } })).violations.map((item) => item.id)).toEqual([]);
+  });
+
+  it('sends I am not sure to a pharmacist', async () => {
+    serve(found);
+    renderAt('/product/c-unsure');
+    await user.click(await screen.findByRole('button', { name: "I'm not sure" }));
+    expect(screen.getByText('Ask a pharmacist to compare')).toBeInTheDocument();
+  });
+
+  it('does not give the all-clear over a serious warning', async () => {
+    serve({ ...found, warnings: [{ code: 'BATCH_RECALLED', explanation: 'Recalled.' }] });
+    renderAt('/product/c-recall');
+    await user.click(await screen.findByRole('button', { name: 'Yes' }));
+    expect(screen.getByText('The details match, but see the warning above')).toBeInTheDocument();
+    expect(screen.queryByText("The details match the manufacturer's record")).not.toBeInTheDocument();
   });
 });
 
