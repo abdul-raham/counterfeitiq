@@ -33,6 +33,8 @@ describe('product names', () => {
     ['Examplol 2.5 mg/5 ml Syrup', 'Examplol'],
     ['Co-Examplol', 'Coexamplol'],
     ['Examplol 1 g Tablets', 'Examplol 1000 mg'],
+    ['Examplol 125mg/5ml Syrup 100ml', 'Examplol 125mg/5ml Syrup'],
+    ['Examplol 125mg/5ml Syrup 100ml', 'Examplol 125mg/5ml Syrup 200ml'],
   ])('treats "%s" and "%s" as the same product', (onPack, onRecord) => {
     expect(nameStatus(onPack, onRecord)).toBe('MATCH');
   });
@@ -40,6 +42,7 @@ describe('product names', () => {
   it.each([
     ['Examplol 250mg Tablets', 'Examplol 500mg Tablets'],
     ['Examplol Tablets', 'Examplol Syrup'],
+    ['Examplol 125mg/5ml Syrup 100ml', 'Examplol 250mg/5ml Syrup 100ml'],
     ['Examplol Extra', 'Examplol'],
   ])('keeps the real difference between "%s" and "%s"', (onPack, onRecord) => {
     expect(nameStatus(onPack, onRecord)).toBe('MISMATCH');

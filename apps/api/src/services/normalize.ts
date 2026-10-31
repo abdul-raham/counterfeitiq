@@ -30,7 +30,8 @@ export function normalizeProductName(value: string | null): string | null {
 
 function nameDetails(value: string, pattern: RegExp, canonical: (detail: string) => string): string[] {
   const details = value.normalize('NFKC').toLowerCase().match(pattern) ?? [];
-  return [...new Set(details.map(canonical))].sort();
+  // A standalone volume such as "100ml" is the pack size, not the strength.
+  return [...new Set(details.map(canonical))].filter((detail) => !/^[\d.]+ml$/.test(detail)).sort();
 }
 
 // Dosage and form are ignored when only one name states them, since the base name
