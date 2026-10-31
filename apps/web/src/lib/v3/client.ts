@@ -71,13 +71,24 @@ function readSaved(): SavedReports {
 
 function save(key: string, report: ProductReport) {
   try {
-    sessionStorage.setItem(REPORTS_KEY, JSON.stringify([...readSaved(), [key, report]].slice(-MAX_SAVED_REPORTS)));
+    const others = readSaved().filter(([savedKey]) => savedKey !== key);
+    sessionStorage.setItem(REPORTS_KEY, JSON.stringify([...others, [key, report]].slice(-MAX_SAVED_REPORTS)));
   } catch {
     // Without storage, a reload simply counts as another scan.
   }
 }
 
 const inFlight = new Map<string, Promise<ProductReport>>();
+
+/**
+ * The first page a tab loads always has the router key 'default', so opening a QR link again in
+ * the same tab looks like the same navigation. Only the browser can tell that apart from a reload.
+ */
+function isNewArrival(navigationKey: string): boolean {
+  if (navigationKey !== 'default') return false;
+  const [entry] = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+  return entry?.type === 'navigate';
+}
 
 /**
  * Every call to /api/scan counts as a scan. So one navigation sends one request: React can run an
@@ -88,7 +99,7 @@ export function scanOnce(navigationKey: string, identifier: string): Promise<Pro
   const key = `${navigationKey}:${identifier}`;
   const existing = inFlight.get(key);
   if (existing) return existing;
-  const saved = readSaved().find(([savedKey]) => savedKey === key)?.[1];
+  const saved = isNewArrival(navigationKey) ? undefined : readSaved().find(([savedKey]) => savedKey === key)?.[1];
   const pending = saved ? Promise.resolve(saved) : scanIdentifier(identifier);
   inFlight.set(key, pending);
   pending.then(

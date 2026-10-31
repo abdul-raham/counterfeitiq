@@ -20,7 +20,7 @@ export function DemoPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
       <PageHeading title="Demo QR codes">
-        Show this page on one screen, and scan a code with a phone's camera. Every company and product here is fictional.
+        Show this page on one screen, and scan a code with a phone's camera. Every company and product here is fictional. Only the serialized pack shows a repeat scan notice, because every pack of a product shares the other codes.
       </PageHeading>
       <ul className="mt-6 grid gap-4 sm:grid-cols-2">
         {DEMO_CODES.map(({ label, shows, identifier, image }) => (
