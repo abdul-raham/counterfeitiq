@@ -4,6 +4,8 @@ A standalone Cloudflare Worker that reads medicine packaging with Gemma, finds c
 
 It supports the pack-code authentication flow and does not replace it. It issues no codes, and it cannot show that a physical medicine is genuine or counterfeit. Every comparison returns `physicalAuthenticityConfirmed: false`.
 
+It also resolves barcodes through ERP connectors. See [docs/erp-integration.md](../../docs/erp-integration.md). `POST /compare-packaging/erp` takes `{ extraction, identifier }` and compares the photo with the manufacturer record.
+
 ## Audit of the existing AI code
 
 Audited `counterfeitiq/main` at `fdaa256`.

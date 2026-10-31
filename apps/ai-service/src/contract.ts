@@ -64,6 +64,17 @@ export const compareRequestSchema = z.strictObject({
   selectedNafdacNumber: z.string().min(1).max(40).optional(),
 });
 
+export const resolveRequestSchema = z.strictObject({
+  identifier: z.string().min(1).max(256),
+  /** A random value the browser keeps and a person can clear. Never an IP address. */
+  deviceId: z.string().min(8).max(100).optional(),
+});
+
+export const compareErpRequestSchema = z.strictObject({
+  extraction: extractionSchema,
+  identifier: z.string().min(1).max(256),
+});
+
 export type SourceCategory =
   | 'LIVE_REGULATORY_REFERENCE'
   | 'AUTHORIZED_REFERENCE_SNAPSHOT'

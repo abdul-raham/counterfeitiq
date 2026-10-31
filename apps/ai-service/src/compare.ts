@@ -42,13 +42,14 @@ function restated(finding: VerificationFinding, status: Comparison, label: strin
   };
 }
 
-function compareFields(extraction: Extraction, record: MedicineReference): VerificationFinding[] {
+export function compareFields(extraction: Extraction, record: MedicineReference): VerificationFinding[] {
   const product = flatten(extraction);
   const findings = compareProduct(product, record).map((finding) => {
     if (finding.field === 'nafdacNumber') {
       // compareProduct drops hyphens, which would equate A11-23456 with A1-123456.
       const pack = product.nafdacNumber ? canonicalNafdacNumber(product.nafdacNumber) : null;
-      const status = !pack ? 'UNKNOWN' : pack === canonicalNafdacNumber(record.nafdacNumber) ? 'MATCH' : 'MISMATCH';
+      const listed = canonicalNafdacNumber(record.nafdacNumber);
+      const status = !pack || !listed ? 'UNKNOWN' : pack === listed ? 'MATCH' : 'MISMATCH';
       return restated(finding, status, 'NAFDAC registration number');
     }
     if (finding.field === 'productName' && finding.status !== 'MATCH' && product.brand) {
@@ -115,7 +116,7 @@ function packagingNotes(extraction: Extraction, lookup: ReferenceLookupResult | 
   return notes;
 }
 
-function overallStatus(findings: VerificationFinding[]): VerificationStatus {
+export function overallStatus(findings: VerificationFinding[]): VerificationStatus {
   if (findings.some((finding) => finding.status === 'MISMATCH')) return 'DETAILS_MISMATCH';
   const matched = (field: string) => findings.some((finding) => finding.field === field && finding.status === 'MATCH');
   return matched('nafdacNumber') && ['productName', 'manufacturer', 'strength', 'ingredients'].some(matched)

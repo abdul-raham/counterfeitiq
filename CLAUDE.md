@@ -13,6 +13,10 @@ CounterfeitIQ reads a product photo and compares what it finds with the NAFDAC G
 - Never bypass a CAPTCHA, login or block. Never commit cookies, tokens or `.dev.vars`.
 - Do not put debug fields from Greenbook responses in public examples or logs.
 
+- A GTIN alone identifies a trade item, never one pack. Only a serial number reaches `PACK`, and only a known pack gets a scan signal.
+- ERP failures are `SOURCE_UNAVAILABLE`, never `NOT_FOUND`. Repeat scans are neutral facts, with no verdict or threshold, because the rescan policy is undecided.
+- Simulated ERP data stays labelled fictional and never reaches a live registry. No real manufacturer or NAFDAC partnership exists, so never imply one.
+
 ## Before finishing work
 
 Run `npm run lint`, `npm run typecheck`, `npm test` and `npm run build` from the repo root. Tests must mock Greenbook and must not contact NAFDAC.
@@ -23,6 +27,9 @@ Only the owner of the Cloudflare account can deploy. Run `npx wrangler deploy` f
 
 ## Key places
 
+- `docs/erp-integration.md`: ERP flow, connecting a manufacturer, and the demo
+- `apps/ai-service/src/erp/`: identifier parsing, connectors, scan reports
+- `apps/demo-erp/`: the simulated ERP, with fictional seed data
 - `apps/api/src/adapters/`: the reference adapters and their shared contract
 - `apps/api/wrangler.jsonc`: live mode, allowed origins and rate limits
 - `apps/api/README.md`: provider, limits and configuration

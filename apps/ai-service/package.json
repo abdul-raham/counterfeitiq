@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "fixtures": "node scripts/make-fixtures.mjs",
-    "demo": "node scripts/demo.mjs"
+    "demo": "node scripts/demo.mjs",
+    "erp-demo": "node scripts/erp-demo.mjs"
   },
   "dependencies": {
     "@counterfeitiq/shared": "*",

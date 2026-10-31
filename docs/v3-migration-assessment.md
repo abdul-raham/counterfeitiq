@@ -1,6 +1,6 @@
 # CounterfeitIQ V3 migration assessment and proposed interface
 
-**Status: proposal for Codex to review. Nothing here is implemented, and no contract is frozen.**
+**Status: implemented on `feat/v3-erp-integration`, described in [erp-integration.md](erp-integration.md). There is no separate contract owner, so the choices below were made there. The sections below record the audit and the original plan.**
 
 Audited on 2026-10-31 against `main` at `fdaa256`, open PRs #16, #17 and #18, and the unmerged branch `feat/v2-ai-intelligence` at `9adebe0`.
 
@@ -144,7 +144,7 @@ All are service-to-service, with a bearer token.
 | `resolveIdentifier` | `POST /resolve-identifier` | Returns the identity level and available records |
 | `getProduct` | `GET /products/:gtin` | |
 | `getBatch` | `GET /products/:gtin/batches/:batch` | |
-| `getPack` | `GET /products/:gtin/packs/:serial` | Records a scan event |
+| `getPack` | `GET /products/:gtin/packs/:serial` | Read-only |
 | `getSourceStatus` | `GET /source-status` | Availability and data freshness |
 | `extractPackaging` | `POST /extract` | Exists on `feat/v2-ai-intelligence` |
 | `comparePackaging` | `POST /compare-packaging` | Exists. Add an ERP record as a comparison source |
@@ -189,18 +189,18 @@ A scan event holds a hashed pack key, a timestamp and a random anonymous device 
 
 Each item in V3 section 10 becomes a test. All ERP tests use a mocked or local provider, and none contacts NAFDAC.
 
-## Questions for Codex
+## Choices made
 
-1. **Where does the ERP layer live?** Recommendation: in `apps/ai-service`, renamed later, so Arif owns it and `apps/api` only adds a thin public route.
-2. **Which public routes does `apps/api` expose?** Recommendation: `GET /api/scan/:identifier` and `GET /api/source-status`, added by Codex.
-3. **Where do these types live?** Recommendation: `packages/shared/v3.ts` in a small contract PR, then frozen.
-4. **Does `getPack` record a scan event, or is that a separate call?** Recommendation: recorded by `getPack`, so a client cannot skip it.
+1. The ERP layer lives in `apps/ai-service/src/erp`.
+2. `apps/api` exposes `GET /api/scan?identifier=` and `GET /api/source-status`. The identifier is a query value, because GS1 strings contain brackets and slashes.
+3. The V3 types stay in `apps/ai-service`, and `packages/shared` is unchanged.
+4. Only `POST /resolve-identifier` records a scan event. `getPack` is read-only, so a read has no side effect.
 
 ## Decisions for Abdulrahman
 
 1. **Close PRs #16, #17 and #18?** Recommendation: close #16 and #17, and rework #18 for V3.
 2. **Merge `feat/v2-ai-intelligence` first?** It has no PR yet. Recommendation: open it as the base for this work.
-3. **Approve a Durable Object for scan events?** Recommendation: yes, with a short retention limit.
+3. **Accept the Durable Object for scan events?** It is built, with 30-day retention. It is simple to remove.
 4. **Keep live Greenbook lookups in production?** V3 says "where permitted", but `main` runs `authorized_live` on an evaluation basis that NAFDAC has not approved, and `docs/greenbook-access.md` says to contact NAFDAC after the hackathon. Recommendation: keep it for the evaluation only, then return to `demo` until NAFDAC replies.
 5. **Who deploys?** Two more Workers need the Cloudflare account owner, and a token each.
 

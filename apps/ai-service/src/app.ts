@@ -3,11 +3,18 @@ import type { VisionModel } from '../../api/src/ai/extraction';
 import type { RateLimiter } from '../../api/src/adapters/greenbook';
 import { AnalysisApiError, apiErrorResponse } from '../../api/src/routes/errors';
 import { comparePackaging } from './compare';
-import { compareRequestSchema, matchRequestSchema, NOTICE, type ServiceErrorCode } from './contract';
+import { comparePackagingWithErp } from './erp/compare';
+import { createHttpConnector } from './erp/http-connector';
+import { parseIdentifier } from './erp/identifiers';
+import { resolveIdentifier } from './erp/resolve';
+import { durableScanStore, type ScanStore } from './erp/scan-store';
+import { connectorFor, notAttempted, type ErpConnector } from './erp/types';
+import { compareErpRequestSchema, compareRequestSchema, matchRequestSchema, NOTICE, resolveRequestSchema, type ServiceErrorCode } from './contract';
 import { extractPackaging } from './extract';
 import { matchProduct } from './match';
 import { workersAiProvider, type VisionProvider } from './provider';
-import { createSource, type SourceOptions } from './sources';
+import { createSource, type ReferenceSource, type SourceOptions } from './sources';
+import { createDemoSource } from './sources/demo';
 
 export interface Env {
   ENVIRONMENT?: string;
@@ -19,12 +26,22 @@ export interface Env {
   GREENBOOK_LIMITER?: RateLimiter;
   EXTRACT_LIMITER?: RateLimiter;
   REFERENCE_LIMITER?: RateLimiter;
+  /** "demo" or "manufacturer_api". Anything else connects nothing. */
+  ERP_MODE?: string;
+  ERP_BASE_URL?: string;
+  ERP_API_TOKEN?: string;
+  ERP_SOURCE_NAME?: string;
+  /** Optional service binding, for Workers on one account. */
+  ERP_SERVICE?: { fetch: typeof fetch };
+  SCAN_HISTORY?: Parameters<typeof durableScanStore>[0];
 }
 
 /** Replaced in tests, so no test reaches a model or a registry. */
 export interface Overrides {
   provider?: VisionProvider;
   source?: SourceOptions;
+  erpFetch?: typeof fetch;
+  scans?: ScanStore;
   now?: () => Date;
 }
 
@@ -135,6 +152,72 @@ function rateLimited(): Response {
   return response;
 }
 
+function createConnectors(env: Env, overrides: Overrides): ErpConnector[] {
+  const mode = env.ERP_MODE?.trim().toLowerCase();
+  if ((mode !== 'demo' && mode !== 'manufacturer_api') || !env.ERP_BASE_URL || !env.ERP_API_TOKEN) return [];
+  const service = env.ERP_SERVICE;
+  return [createHttpConnector({
+    sourceName: env.ERP_SOURCE_NAME || (mode === 'demo' ? 'CounterfeitIQ simulated ERP (fictional)' : 'Manufacturer API'),
+    sourceType: mode === 'demo' ? 'SIMULATED_ERP' : 'MANUFACTURER_API',
+    baseUrl: env.ERP_BASE_URL,
+    token: env.ERP_API_TOKEN,
+    fetch: overrides.erpFetch ?? (service ? (input, init) => service.fetch(input, init) : undefined),
+    now: overrides.now,
+  })];
+}
+
+const ERP_ROUTE = /^\/(?:resolve-identifier|source-status|compare-packaging\/erp|products\/[^/]+(?:\/(?:batches|packs)\/[^/]+)?)$/;
+
+async function erpRoute(request: Request, pathname: string, env: Env, overrides: Overrides, reference: () => ReferenceSource): Promise<Response> {
+  const connectors = createConnectors(env, overrides);
+  const invalid = () => serviceError('INVALID_REQUEST', 'The request does not match the contract.', 400);
+  const expected = pathname === '/resolve-identifier' || pathname === '/compare-packaging/erp' ? 'POST' : 'GET';
+  if (request.method !== expected) return new Response(null, { status: 405, headers: { Allow: expected } });
+
+  if (expected === 'POST') {
+    const json = await readJson(request);
+    if ('failure' in json) return json.failure;
+    if (pathname === '/compare-packaging/erp') {
+      const parsed = compareErpRequestSchema.safeParse(json.body);
+      if (!parsed.success) return invalid();
+      return Response.json(await comparePackagingWithErp(parsed.data.extraction, parsed.data.identifier, connectors));
+    }
+    const parsed = resolveRequestSchema.safeParse(json.body);
+    if (!parsed.success) return invalid();
+    return Response.json(await resolveIdentifier(parsed.data.identifier, {
+      connectors,
+      // Simulated products never reach a live registry, because their numbers are fictional.
+      referenceFor: (connector) => (connector.sourceType === 'SIMULATED_ERP' ? createDemoSource(overrides.now) : reference()),
+      scans: overrides.scans ?? (env.SCAN_HISTORY ? durableScanStore(env.SCAN_HISTORY) : null),
+      deviceId: parsed.data.deviceId,
+      now: overrides.now,
+    }));
+  }
+
+  if (pathname === '/source-status') {
+    const statuses = await Promise.all(connectors.map((connector) => connector.getSourceStatus()));
+    return Response.json({
+      sources: statuses.length ? statuses : [{ available: false, capabilities: { batches: false, packs: false }, provenance: notAttempted('No connected source') }],
+    });
+  }
+
+  const [, , rawGtin, child, rawKey] = pathname.split('/');
+  let key: string | null = null;
+  try {
+    key = rawKey ? decodeURIComponent(rawKey) : null;
+  } catch {
+    return invalid();
+  }
+  const gtin = parseIdentifier(rawGtin ?? '')?.gtin;
+  if (!gtin) return invalid();
+  const connector = connectorFor(connectors, gtin);
+  if (!connector) return Response.json({ status: 'SOURCE_UNAVAILABLE', data: null, provenance: notAttempted('No connected source') });
+  if (child === 'batches' && key) return Response.json(await connector.getBatch(gtin, key));
+  // Read-only: only a consumer scan through /resolve-identifier records an event.
+  if (child === 'packs' && key) return Response.json(await connector.getPack(gtin, key));
+  return Response.json(await connector.getProduct(gtin));
+}
+
 async function route(request: Request, env: Env, overrides: Overrides): Promise<Response> {
   const pathname = new URL(request.url).pathname.replace(/\/+$/, '') || '/';
 
@@ -150,10 +233,11 @@ async function route(request: Request, env: Env, overrides: Overrides): Promise<
     });
   }
 
-  if (!['/extract', '/match-product', '/compare-packaging'].includes(pathname)) {
+  const erp = ERP_ROUTE.test(pathname);
+  if (!erp && !['/extract', '/match-product', '/compare-packaging'].includes(pathname)) {
     return serviceError('INVALID_REQUEST', 'The requested route was not found.', 404);
   }
-  if (request.method !== 'POST') return new Response(null, { status: 405, headers: { Allow: 'POST' } });
+  if (!erp && request.method !== 'POST') return new Response(null, { status: 405, headers: { Allow: 'POST' } });
 
   // No token configured means nobody gets in, not everybody.
   if (!env.AI_SERVICE_TOKEN) {
@@ -169,15 +253,18 @@ async function route(request: Request, env: Env, overrides: Overrides): Promise<
   }
 
   if (!(await withinLimit(env.REFERENCE_LIMITER))) return rateLimited();
-  const json = await readJson(request);
-  if ('failure' in json) return json.failure;
-  const source = createSource({
+  const reference = () => createSource({
     mode: env.REFERENCE_MODE,
     greenbookAccessBasis: env.GREENBOOK_ACCESS_BASIS,
     limiter: env.GREENBOOK_LIMITER,
     now: overrides.now,
     ...overrides.source,
   });
+  if (erp) return erpRoute(request, pathname, env, overrides, reference);
+
+  const json = await readJson(request);
+  if ('failure' in json) return json.failure;
+  const source = reference();
 
   if (pathname === '/match-product') {
     const parsed = matchRequestSchema.safeParse(json.body);

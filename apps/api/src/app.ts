@@ -4,6 +4,7 @@ import { extractProduct, type VisionModel } from './ai/extraction';
 import { analyzeRequest, type AnalyzeDependencies } from './routes/analyze';
 import { apiErrorResponse } from './routes/errors';
 import { referenceRequest } from './routes/reference';
+import { scanRequest, sourceStatusRequest, type IntelligenceService } from './routes/scan';
 
 interface RequestLimiter {
   limit(options: { key: string }): Promise<{ success: boolean }>;
@@ -19,6 +20,8 @@ export interface Env {
   ALLOWED_ORIGINS?: string;
   ANALYZE_LIMITER?: RequestLimiter;
   REFERENCE_LIMITER?: RequestLimiter;
+  INTELLIGENCE_URL?: string;
+  AI_SERVICE_TOKEN?: string;
 }
 
 function corsHeaders(request: Request, env: Env): Record<string, string> {
@@ -29,7 +32,7 @@ function corsHeaders(request: Request, env: Env): Record<string, string> {
     Vary: 'Origin',
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Accept',
+    'Access-Control-Allow-Headers': 'Content-Type, Accept, X-Scan-Device',
     'Access-Control-Max-Age': '86400',
   };
 }
@@ -105,6 +108,13 @@ async function route(request: Request, url: URL, env: Env): Promise<Response> {
     if (request.method !== 'POST') return new Response(null, { status: 405, headers: { Allow: 'POST' } });
     if (!(await withinLimit(env.ANALYZE_LIMITER, request))) return rateLimited();
     return analyzeRequest(request, deps);
+  }
+
+  if (pathname === '/api/scan' || pathname === '/api/source-status') {
+    if (request.method !== 'GET') return new Response(null, { status: 405, headers: { Allow: 'GET' } });
+    if (!(await withinLimit(env.REFERENCE_LIMITER, request))) return rateLimited();
+    const service: IntelligenceService = { url: env.INTELLIGENCE_URL, token: env.AI_SERVICE_TOKEN };
+    return pathname === '/api/scan' ? scanRequest(request, url, service) : sourceStatusRequest(service);
   }
 
   if (pathname.startsWith('/api/reference/')) {

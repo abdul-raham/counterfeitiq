@@ -11,10 +11,14 @@
     // Same namespace as apps/api, so the two Workers share one Greenbook budget.
     { "name": "GREENBOOK_LIMITER", "namespace_id": "1003", "simple": { "limit": 10, "period": 60 } }
   ],
+  "durable_objects": { "bindings": [{ "name": "SCAN_HISTORY", "class_name": "ScanHistory" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ScanHistory"] }],
   "vars": {
     "ENVIRONMENT": "production",
     "GEMMA_MODEL": "@cf/google/gemma-4-26b-a4b-it",
     "REFERENCE_MODE": "demo",
-    "GREENBOOK_ACCESS_BASIS": ""
+    "GREENBOOK_ACCESS_BASIS": "",
+    "ERP_MODE": "demo",
+    "ERP_BASE_URL": ""
   }
 }
