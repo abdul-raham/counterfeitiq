@@ -3,6 +3,7 @@
   "name": "counterfeitiq-api",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-30",
+  "compatibility_flags": ["global_fetch_strictly_public"],
   "observability": { "enabled": true },
   "ai": { "binding": "AI", "remote": true },
   "ratelimits": [
@@ -15,6 +16,7 @@
     "GEMMA_MODEL": "@cf/google/gemma-4-26b-a4b-it",
     "REFERENCE_MODE": "authorized_live",
     "GREENBOOK_ACCESS_BASIS": "public-endpoint-hackathon-evaluation-2026-10-31",
+    "INTELLIGENCE_URL": "https://counterfeitiq-ai-service.arifopeandu.workers.dev",
     "ALLOWED_ORIGINS": "https://counterfeitiq.vercel.app,http://localhost:5173"
   }
 }

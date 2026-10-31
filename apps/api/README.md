@@ -9,6 +9,8 @@ Deployed at `https://counterfeitiq-api.arifopeandu.workers.dev`.
 | `GET /api/health` | Status, `visionConfigured`, `referenceMode` |
 | `POST /api/analyze` | Multipart field `image`; returns `AnalysisResponse` |
 | `GET /api/reference/:number` | Manual lookup; returns `ReferenceLookupResult` |
+| `GET /api/scan?identifier=` | Barcode scan; see [docs/erp-integration.md](../../docs/erp-integration.md). Optional header `X-Scan-Device` |
+| `GET /api/source-status` | Availability and freshness of connected ERP sources |
 
 ## Vision provider
 

@@ -34,10 +34,10 @@ describe('home', () => {
   it('leads with the agreed copy and both actions', async () => {
     const { container } = renderAt('/');
     expect(screen.getByRole('heading', { level: 1, name: "Know what you're buying." })).toBeInTheDocument();
-    expect(screen.getByText('Scan a product to examine its details and check available registration records.')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Scan a product' })).toHaveAttribute('href', '/scan');
-    expect(screen.getByRole('link', { name: 'Enter NAFDAC number' })).toHaveAttribute('href', '/lookup');
-    expect(screen.getByText(/does not prove a physical pack is genuine/)).toBeInTheDocument();
+    expect(screen.getByText(/Scan a medicine's barcode/)).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'Scan a product' })[0]).toHaveAttribute('href', '/scan');
+    expect(screen.getByRole('link', { name: 'Inspect packaging' })).toHaveAttribute('href', '/inspect');
+    expect(screen.getByText(/does not prove a pack is genuine/)).toBeInTheDocument();
     await expectNoAxeViolations(container);
   });
 });
@@ -47,7 +47,7 @@ describe('scanner', () => {
 
   it('does not upload until the user asks, then shows the report', async () => {
     const fetchMock = respondWith(analysis());
-    const { container } = renderAt('/scan');
+    const { container } = renderAt('/inspect');
     await expectNoAxeViolations(container);
 
     await user.upload(screen.getByTestId('gallery-input'), photo);
@@ -55,7 +55,7 @@ describe('scanner', () => {
     expect(fetchMock).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole('button', { name: 'Check this product' }));
-    expect(await screen.findByRole('heading', { level: 1, name: 'Your report' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Packaging report' })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(screen.getByText('Registration details match')).toBeInTheDocument();
     await expectNoAxeViolations(container);
@@ -63,14 +63,14 @@ describe('scanner', () => {
 
   it('rejects unsupported files without uploading', async () => {
     const fetchMock = respondWith(analysis());
-    renderAt('/scan');
+    renderAt('/inspect');
     await user.upload(screen.getByTestId('gallery-input'), new File(['x'], 'notes.pdf', { type: 'application/pdf' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('That file type is not supported');
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('releases the previous object URL when a photo is replaced', async () => {
-    renderAt('/scan');
+    renderAt('/inspect');
     await user.upload(screen.getByTestId('gallery-input'), photo);
     const first = (await screen.findByAltText('The photo you selected')).getAttribute('src');
     await user.upload(screen.getByTestId('gallery-input'), new File(['two'], 'two.png', { type: 'image/png' }));
@@ -80,7 +80,7 @@ describe('scanner', () => {
 
   it('keeps the photo and offers a retry after a retryable failure', async () => {
     respondWith({ error: { code: 'MODEL_TIMEOUT', message: 'x', retryable: true } }, 504);
-    renderAt('/scan');
+    renderAt('/inspect');
     await user.upload(screen.getByTestId('gallery-input'), photo);
     await user.click(await screen.findByRole('button', { name: 'Check this product' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Reading the photo took too long');
@@ -88,12 +88,12 @@ describe('scanner', () => {
 
     respondWith(analysis());
     await user.click(screen.getByRole('button', { name: 'Try again' }));
-    expect(await screen.findByRole('heading', { level: 1, name: 'Your report' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Packaging report' })).toBeInTheDocument();
   });
 
   it('offers no retry for an error that retrying cannot fix', async () => {
     respondWith({ error: { code: 'UNREADABLE_IMAGE', message: 'x', retryable: false } }, 422);
-    renderAt('/scan');
+    renderAt('/inspect');
     await user.upload(screen.getByTestId('gallery-input'), photo);
     await user.click(await screen.findByRole('button', { name: 'Check this product' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('We could not read that image');
@@ -104,7 +104,7 @@ describe('scanner', () => {
     vi.stubGlobal('fetch', vi.fn((_url: string, init: RequestInit) => new Promise((_resolve, reject) => {
       init.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
     })));
-    renderAt('/scan');
+    renderAt('/inspect');
     await user.upload(screen.getByTestId('gallery-input'), photo);
     await user.click(await screen.findByRole('button', { name: 'Check this product' }));
 
@@ -122,17 +122,17 @@ describe('scanner', () => {
     vi.stubGlobal('fetch', vi.fn((_url: string, init: RequestInit) => new Promise((_resolve, reject) => {
       init.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
     })));
-    renderAt('/scan');
+    renderAt('/inspect');
     await user.upload(screen.getByTestId('gallery-input'), photo);
     await user.click(await screen.findByRole('button', { name: 'Check this product' }));
-    await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Checking your product' })).toHaveFocus());
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Inspecting the packaging' })).toHaveFocus());
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
-    await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Scan a product' })).toHaveFocus());
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Inspect packaging' })).toHaveFocus());
   });
 
   it('falls back to the native capture input when the camera API is missing', async () => {
     vi.stubGlobal('navigator', Object.assign(Object.create(navigator), { mediaDevices: undefined }));
-    renderAt('/scan');
+    renderAt('/inspect');
     const input = screen.getByTestId('capture-input');
     expect(input).toHaveAttribute('capture', 'environment');
     const click = vi.spyOn(input, 'click');
@@ -143,20 +143,20 @@ describe('scanner', () => {
   it('offers the device camera when camera permission is denied', async () => {
     const getUserMedia = vi.fn(async () => { throw new DOMException('Denied', 'NotAllowedError'); });
     vi.stubGlobal('navigator', Object.assign(Object.create(navigator), { mediaDevices: { getUserMedia } }));
-    renderAt('/scan');
+    renderAt('/inspect');
     await user.click(screen.getByRole('button', { name: 'Take a photo' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('We could not open the camera');
     expect(screen.getByRole('button', { name: 'Use device camera' })).toBeInTheDocument();
   });
 
   it('sends a direct visit to the report page back to the scanner', async () => {
-    renderAt('/report');
-    expect(await screen.findByRole('heading', { level: 1, name: 'Scan a product' })).toBeInTheDocument();
+    renderAt('/inspect/report');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Inspect packaging' })).toBeInTheDocument();
   });
 
   it('clears the report and photo on Scan another product', async () => {
     respondWith(analysis());
-    renderAt('/scan');
+    renderAt('/inspect');
     await user.upload(screen.getByTestId('gallery-input'), photo);
     await user.click(await screen.findByRole('button', { name: 'Check this product' }));
     await user.click(await screen.findByRole('button', { name: 'Scan another product' }));
