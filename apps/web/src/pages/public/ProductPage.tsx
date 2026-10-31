@@ -8,7 +8,7 @@ import { ReportSection } from '../../components/ReportSection';
 import { Skeleton } from '../../components/Skeleton';
 import { StatusMessage, type Tone } from '../../components/StatusMessage';
 import { RecordDetails } from '../../features/report/RecordDetails';
-import { PackCheck } from '../../features/scan/PackCheck';
+import { PackCheck, whatToDoWithIt } from '../../features/scan/PackCheck';
 import { toRequestError } from '../../lib/errors';
 import { formatDate } from '../../lib/format';
 import { scanOnce } from '../../lib/v3/client';
@@ -77,7 +77,7 @@ function LookupResult({ report, reportLink, code, fromQr }: { report: ProductRep
     return (
       <div className="mt-6 space-y-4">
         <StatusMessage tone="risk" title="This QR code is fake" role="alert">
-          This code is not in the manufacturer's records, so it did not come from them. Do not use this medicine. Show it to a pharmacist, and report it.
+          This code is not in the manufacturer's records, so it did not come from them. Do not use this product, and report it. {whatToDoWithIt(report)}
           {product && <span className="mt-1 block">The code claims to be {product.productName}{product.manufacturer && ` from ${product.manufacturer}`}.</span>}
         </StatusMessage>
         <p className="break-all text-sm text-muted">Code: {code}</p>
@@ -170,7 +170,7 @@ function LookupResult({ report, reportLink, code, fromQr }: { report: ProductRep
 
       {registrationReference && (
         <ReportSection title="Registration record">
-          <RecordDetails record={registrationReference} />
+          <RecordDetails record={{ ...registrationReference, strength: null }} />
         </ReportSection>
       )}
 

@@ -17,7 +17,7 @@ const found: ProductReport = {
   outcome: 'RESOLVED',
   identityLevel: 'PRODUCT',
   identifier: { gtin: '02000000001012', batchNumber: null, serial: null, printedExpiryDate: null },
-  product: { gtin: '02000000001012', productName: 'Demozol 500 mg Tablets', brand: 'Demozol', manufacturer: 'Fictional Labs Nigeria Ltd', nafdacNumber: 'DEMO-0101', strength: '500 mg', dosageForm: 'Tablet', ingredients: ['Demozolamine'], category: 'medicine' },
+  product: { gtin: '02000000001012', productName: 'Demozol 500 mg Tablets', brand: 'Demozol', manufacturer: 'Fictional Labs Nigeria Ltd', nafdacNumber: 'DEMO-0101', strength: '500 mg', dosageForm: 'Tablet', ingredients: ['Demozolamine'], category: 'medicine', packSize: '20 tablets' },
   batch: null,
   pack: null,
   registrationReference: null,
@@ -194,7 +194,7 @@ describe('product result', () => {
     serve({ ...empty, outcome: 'NOT_FOUND' });
     const { container } = renderAt('/product/qr-none?qr=1');
     expect(await screen.findByText('This QR code is fake')).toBeInTheDocument();
-    expect(screen.getByText(/Do not use this medicine/)).toBeInTheDocument();
+    expect(screen.getByText(/Do not use this product/)).toBeInTheDocument();
     expect((await axe.run(container)).violations).toEqual([]);
   });
 
@@ -242,7 +242,7 @@ describe('product result', () => {
 
   it('lists every demo code with an image and a scanned-QR link', () => {
     renderAt('/demo');
-    expect(screen.getAllByRole('img')).toHaveLength(11);
+    expect(screen.getAllByRole('img')).toHaveLength(12);
     expect(screen.getByRole('link', { name: 'Open result: Fake pack' })).toHaveAttribute('href', '/product/(01)02000000001012(21)FAKESN0001?qr=1');
   });
 
@@ -289,14 +289,14 @@ describe('repeat scans', () => {
     serve(sameDevice);
     renderAt('/product/x-rescan');
     expect(await screen.findByText(/likely your own rescan/)).toBeInTheDocument();
-    expect(screen.queryByText(/scratch panel intact/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/scratch this panel/)).not.toBeInTheDocument();
   });
 
   it('asks about the panel for a scan from elsewhere, and never says fake', async () => {
     serve(elsewhere);
     const { container } = renderAt('/product/x-elsewhere');
     expect(await screen.findByText('This pack code has been scanned 2 times before')).toBeInTheDocument();
-    expect(screen.getByText('Was the scratch panel intact before this scan?')).toBeInTheDocument();
+    expect(screen.getByText('Did you scratch this panel yourself?')).toBeInTheDocument();
     expect(container.textContent).not.toMatch(/fake/i);
     expect((await axe.run(container, { rules: { 'color-contrast': { enabled: false } } })).violations.map((item) => item.id)).toEqual([]);
   });
@@ -304,7 +304,7 @@ describe('repeat scans', () => {
   it('calls an intact panel a high-risk duplicate, without calling it fake', async () => {
     serve(elsewhere);
     const { container } = renderAt('/product/x-intact');
-    await user.click(await screen.findByRole('button', { name: 'Yes, it was intact' }));
+    await user.click(await screen.findByRole('button', { name: "I've scratched it" }));
     expect(screen.getByText('High-risk duplicate')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Yes' }));
     expect(screen.getByText('Do not use this pack')).toBeInTheDocument();
@@ -314,7 +314,7 @@ describe('repeat scans', () => {
   it('sends a scratched panel to the seller', async () => {
     serve(elsewhere);
     renderAt('/product/x-scratched');
-    await user.click(await screen.findByRole('button', { name: 'No, it was already scratched' }));
+    await user.click(await screen.findByRole('button', { name: "I haven't, it came scratched" }));
     expect(screen.getByText('Repeated scan: ask the seller about this pack')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Yes' }));
     expect(screen.getByText('The details match, but ask the seller about the earlier scan')).toBeInTheDocument();
@@ -324,7 +324,7 @@ describe('repeat scans', () => {
     serve(elsewhere);
     renderAt('/product/x-wait');
     await user.click(await screen.findByRole('button', { name: 'Yes' }));
-    expect(screen.getByText(/Answer the scratch panel question/)).toBeInTheDocument();
+    expect(screen.getByText(/Tell us about the scratch panel/)).toBeInTheDocument();
     expect(screen.queryByText("The details match the manufacturer's record")).not.toBeInTheDocument();
   });
 });
@@ -334,7 +334,7 @@ describe('package checklist', () => {
     serve(found);
     const { container } = renderAt('/product/c-yes');
     expect(await screen.findByText('Check the package in your hand')).toBeInTheDocument();
-    expect(screen.getByText('Strength: 500 mg')).toBeInTheDocument();
+    expect(screen.getByText('Pack size: 20 tablets')).toBeInTheDocument();
     expect(screen.queryByText(/^Batch:/)).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Yes' }));
     expect(screen.getByText("The details match the manufacturer's record")).toBeInTheDocument();
@@ -346,11 +346,32 @@ describe('package checklist', () => {
     serve(found);
     const { container } = renderAt('/product/c-no');
     await user.click(await screen.findByRole('button', { name: 'No' }));
-    await user.click(screen.getByRole('checkbox', { name: 'Strength' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Pack size' }));
     await user.click(screen.getByRole('checkbox', { name: 'Something else' }));
     expect(screen.getByText('This package does not match the record')).toBeInTheDocument();
-    expect(screen.getByText(/What differs: Strength, Something else/)).toBeInTheDocument();
+    expect(screen.getByText(/What differs: Pack size, Something else/)).toBeInTheDocument();
     expect((await axe.run(container, { rules: { 'color-contrast': { enabled: false } } })).violations.map((item) => item.id)).toEqual([]);
+  });
+
+  it('never shows strength, and shows no rows for details not on record', async () => {
+    serve({
+      ...found,
+      product: { ...found.product!, strength: '500 mg', brand: null, nafdacNumber: null, packSize: null, dosageForm: null, ingredients: [] },
+      registrationReference: { productName: 'Demozol 500 mg Tablets', nafdacNumber: 'DEMO-0101', manufacturer: null, strength: '500 mg', ingredients: [], registrationExpiry: null, retrievedAt: '2026-10-31T00:00:00.000Z' },
+    });
+    const { container } = renderAt('/product/c-blank');
+    await screen.findByText('Check the package in your hand');
+    expect(container.textContent).not.toMatch(/Strength|Brand|Pack size|Active ingredients/);
+  });
+
+  it('does not send a non-medicine to a pharmacist', async () => {
+    serve({ ...found, product: { ...found.product!, category: 'food and drink' } });
+    const { container } = renderAt('/product/c-water');
+    await user.click(await screen.findByRole('button', { name: 'No' }));
+    expect(screen.getByText(/Keep the package and your receipt/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: "I'm not sure" }));
+    expect(screen.getByText('Ask the seller to compare')).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/pharmacist/);
   });
 
   it('sends I am not sure to a pharmacist', async () => {

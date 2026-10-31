@@ -34,7 +34,7 @@ describe('home', () => {
   it('leads with the agreed copy and both actions', async () => {
     const { container } = renderAt('/');
     expect(screen.getByRole('heading', { level: 1, name: "Know what you're buying." })).toBeInTheDocument();
-    expect(screen.getByText(/Scan a medicine's QR code/)).toBeInTheDocument();
+    expect(screen.getByText(/Scan a product's QR code/)).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'Scan a product' })[0]).toHaveAttribute('href', '/scan');
     expect(screen.getByRole('link', { name: 'Inspect packaging' })).toHaveAttribute('href', '/inspect');
     expect(screen.getByText(/does not prove a pack is genuine/)).toBeInTheDocument();

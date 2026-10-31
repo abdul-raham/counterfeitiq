@@ -69,6 +69,7 @@ describe('product resolution', () => {
     const report = await resolve(GTINS.demozol250, undefined, scans);
     await resolve(GTINS.demozol250, undefined, scans);
     expect(report).toMatchObject({ outcome: 'RESOLVED', identityLevel: 'PRODUCT', pack: null, batch: null, scanSignal: null, physicalAuthenticityConfirmed: false });
+    expect(report.product?.packSize).toBe('20 tablets');
     expect(report.product?.productName).toBe('Demozol 250 mg Tablets');
     expect(report.explanation).toContain('not one physical pack');
   });

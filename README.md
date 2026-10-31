@@ -1,6 +1,6 @@
 # CounterfeitIQ
 
-CounterfeitIQ is a QR-first medicine information tool. Scan a pack's QR code, and it shows what the manufacturer has on record for that code, where the information came from, and anything worth checking. An open-weight Gemma model can also inspect a photo of the packaging.
+CounterfeitIQ is a QR-first product information tool, for medicine, water, food and other regulated products. Scan a pack's QR code, and it shows what the manufacturer has on record for that code, where the information came from, and anything worth checking. An open-weight Gemma model can also inspect a photo of the packaging.
 
 - **Live app:** https://counterfeitiq.vercel.app
 - **API:** https://counterfeitiq-api.arifopeandu.workers.dev/api/health
@@ -20,7 +20,7 @@ In the proposed model, manufacturers keep their products indexed in their own ER
 - A record does not prove a pack is genuine, because a code can be copied. So a found record is never called genuine.
 - A CounterfeitIQ QR code that the manufacturer's records don't hold is called fake, because only a connected manufacturer's packs carry these codes. This covers an unknown product, serial number or batch.
 - A typed code or an ordinary barcode with no record is never called fake, and neither is any code when the source can't answer.
-- A repeat scan of a serialized pack is information to look into. A scan from the same device is treated as a likely rescan. A scan from another device asks whether the scratch panel was intact: intact is a high-risk duplicate, and already scratched is a question for the seller. Codes that only identify the product are shared by every pack, so they never show repeats.
+- A repeat scan of a serialized pack is information to look into. A scan from the same device is treated as a likely rescan. A scan from another device asks whether you scratched the panel yourself: if so, it's a high-risk duplicate, and if it came scratched, it's a question for the seller. Codes that only identify the product are shared by every pack, so they never show repeats.
 
 ## How it works
 

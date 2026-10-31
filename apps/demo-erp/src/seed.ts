@@ -21,6 +21,7 @@ export interface SeedItem {
   form: string | null;
   actives: string[];
   category: string | null;
+  pack_size: string | null;
 }
 
 export interface SeedLot {
@@ -41,6 +42,7 @@ export interface SeedPack {
 const FICTIONAL_LABS = 'Fictional Labs Nigeria Ltd';
 const IMAGINARY = 'Imaginary Pharmaceuticals Plc';
 const SAMPLE = 'Sample Remedies Ltd';
+const SPRINGS = 'Imaginary Springs Ltd';
 
 export const GTINS = {
   demozol500: gtin14('200000000101'),
@@ -50,24 +52,26 @@ export const GTINS = {
   placebrinJunior: gtin14('200000000202'),
   examplin: gtin14('200000000301'),
   examplinCream: gtin14('200000000302'),
+  demowater: gtin14('200000000401'),
   unlisted: gtin14('200000000999'),
 };
 
 const item = (
   gtin: string, description: string, company: string | null, nafdac_reg: string | null,
-  strength: string | null, form: string | null, actives: string[],
-): SeedItem => ({ gtin, description, brand: description.split(' ')[0] ?? null, company, nafdac_reg, strength, form, actives, category: 'medicine' });
+  strength: string | null, form: string | null, actives: string[], pack_size: string | null, category = 'medicine',
+): SeedItem => ({ gtin, description, brand: description.split(' ')[0] ?? null, company, nafdac_reg, strength, form, actives, category, pack_size });
 
 export const ITEMS: SeedItem[] = [
-  item(GTINS.demozol500, 'Demozol 500 mg Tablets', FICTIONAL_LABS, 'DEMO-0101', '500 mg', 'Tablet', ['Demozolamine']),
+  item(GTINS.demozol500, 'Demozol 500 mg Tablets', FICTIONAL_LABS, 'DEMO-0101', '500 mg', 'Tablet', ['Demozolamine'], '20 tablets'),
   // Ordinary GTIN only: no batches or packs are indexed for this product.
-  item(GTINS.demozol250, 'Demozol 250 mg Tablets', FICTIONAL_LABS, 'DEMO-0102', '250 mg', 'Tablet', ['Demozolamine']),
-  item(GTINS.coughex, 'Coughex Syrup', FICTIONAL_LABS, null, '10 mg/5 ml', 'Syrup', ['Coughexine']),
-  item(GTINS.placebrin, 'Placebrin Syrup', IMAGINARY, 'DEMO-0201', '125 mg/5 ml', 'Syrup', ['Placebrinate']),
+  item(GTINS.demozol250, 'Demozol 250 mg Tablets', FICTIONAL_LABS, 'DEMO-0102', '250 mg', 'Tablet', ['Demozolamine'], '20 tablets'),
+  item(GTINS.coughex, 'Coughex Syrup', FICTIONAL_LABS, null, '10 mg/5 ml', 'Syrup', ['Coughexine'], '100 ml bottle'),
+  item(GTINS.placebrin, 'Placebrin Syrup', IMAGINARY, 'DEMO-0201', '125 mg/5 ml', 'Syrup', ['Placebrinate'], '100 ml bottle'),
   // Incomplete record: most reference data is missing.
-  item(GTINS.placebrinJunior, 'Placebrin Junior', null, null, null, null, []),
-  item(GTINS.examplin, 'Examplin 100 mg Capsules', SAMPLE, 'DEMO-0301', '100 mg', 'Capsule', ['Exampline']),
-  item(GTINS.examplinCream, 'Examplin Cream', SAMPLE, 'DEMO-0302', '1%', 'Cream', ['Exampline']),
+  item(GTINS.placebrinJunior, 'Placebrin Junior', null, null, null, null, [], null),
+  item(GTINS.examplin, 'Examplin 100 mg Capsules', SAMPLE, 'DEMO-0301', '100 mg', 'Capsule', ['Exampline'], '30 capsules'),
+  item(GTINS.examplinCream, 'Examplin Cream', SAMPLE, 'DEMO-0302', '1%', 'Cream', ['Exampline'], '30 g tube'),
+  item(GTINS.demowater, 'Demowater Table Water 75 cl', SPRINGS, 'DEMO-0401', null, 'Bottled water', [], '12 x 75 cl bottles', 'food and drink'),
 ];
 
 export const LOTS: SeedLot[] = [
@@ -78,6 +82,7 @@ export const LOTS: SeedLot[] = [
   { gtin: GTINS.placebrin, lot_no: 'PB7731', mfg_date: null, exp_date: null, lot_status: null },
   { gtin: GTINS.examplin, lot_no: 'EX5001', mfg_date: '2026-05-01', exp_date: '2028-04-30', lot_status: 'quarantine' },
   { gtin: GTINS.examplin, lot_no: 'EX5002', mfg_date: '2026-06-01', exp_date: '2028-05-31', lot_status: 'released' },
+  { gtin: GTINS.demowater, lot_no: 'WT3001', mfg_date: '2026-09-01', exp_date: '2027-09-30', lot_status: 'released' },
 ];
 
 export const PACKS: SeedPack[] = [
@@ -86,4 +91,5 @@ export const PACKS: SeedPack[] = [
   { gtin: GTINS.demozol500, serial: 'DEMOSN0003', lot_no: 'DX2042', pack_state: 'blocked' },
   { gtin: GTINS.examplin, serial: 'DEMOSN1001', lot_no: 'EX5002', pack_state: 'in_market' },
   { gtin: GTINS.examplin, serial: 'DEMOSN1002', lot_no: null, pack_state: null },
+  { gtin: GTINS.demowater, serial: 'DEMOWT0001', lot_no: 'WT3001', pack_state: 'in_market' },
 ];

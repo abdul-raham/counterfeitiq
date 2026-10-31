@@ -12,17 +12,32 @@ export const DEMO_RECORDS: readonly MedicineReference[] = [
   {
     productName: 'Demozol 500 mg Tablets', nafdacNumber: 'DEMO-0101', manufacturer: 'Fictional Labs Nigeria Ltd',
     strength: '500 mg', ingredients: ['Demozolamine'], registrationExpiry: '2029-01-31', retrievedAt: RETRIEVED_AT,
-    dosageForm: 'Tablet', registrationStatus: 'Active',
+    dosageForm: 'Tablet', registrationStatus: 'Active', applicant: 'Fictional Labs Nigeria Ltd',
   },
   {
     productName: 'Demozol 250 mg Tablets', nafdacNumber: 'DEMO-0102', manufacturer: 'Fictional Labs Nigeria Ltd',
     strength: '250 mg', ingredients: ['Demozolamine'], registrationExpiry: '2029-01-31', retrievedAt: RETRIEVED_AT,
-    dosageForm: 'Tablet', registrationStatus: 'Active',
+    dosageForm: 'Tablet', registrationStatus: 'Active', applicant: 'Fictional Labs Nigeria Ltd',
   },
   {
     productName: 'Placebrin Syrup', nafdacNumber: 'DEMO-0201', manufacturer: 'Imaginary Pharmaceuticals Plc',
     strength: '125 mg/5 ml', ingredients: ['Placebrinate'], registrationExpiry: '2028-06-30', retrievedAt: RETRIEVED_AT,
-    dosageForm: 'Syrup', registrationStatus: 'Active',
+    dosageForm: 'Syrup', registrationStatus: 'Active', applicant: 'Imaginary Pharmaceuticals Plc',
+  },
+  {
+    productName: 'Examplin 100 mg Capsules', nafdacNumber: 'DEMO-0301', manufacturer: 'Sample Remedies Ltd',
+    strength: '100 mg', ingredients: ['Exampline'], registrationExpiry: '2029-01-31', retrievedAt: RETRIEVED_AT,
+    dosageForm: 'Capsule', registrationStatus: 'Active', applicant: 'Sample Remedies Ltd',
+  },
+  {
+    productName: 'Examplin Cream', nafdacNumber: 'DEMO-0302', manufacturer: 'Sample Remedies Ltd',
+    strength: '1%', ingredients: ['Exampline'], registrationExpiry: '2029-01-31', retrievedAt: RETRIEVED_AT,
+    dosageForm: 'Cream', registrationStatus: 'Active', applicant: 'Sample Remedies Ltd',
+  },
+  {
+    productName: 'Demowater Table Water 75 cl', nafdacNumber: 'DEMO-0401', manufacturer: 'Imaginary Springs Ltd',
+    strength: null, ingredients: [], registrationExpiry: '2029-01-31', retrievedAt: RETRIEVED_AT,
+    dosageForm: 'Bottled water', registrationStatus: 'Active', applicant: 'Imaginary Springs Ltd',
   },
 ];
 

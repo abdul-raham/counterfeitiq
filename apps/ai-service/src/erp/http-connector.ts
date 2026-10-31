@@ -26,7 +26,7 @@ const text = z.string().max(300).nullable();
 
 const itemSchema = z.object({
   gtin: z.string(), description: z.string().min(1).max(300), brand: text, company: text, nafdac_reg: text,
-  strength: text, form: text, actives: z.array(z.string().max(300)).max(30), category: text,
+  strength: text, form: text, actives: z.array(z.string().max(300)).max(30), category: text, pack_size: text.optional(),
 });
 const lotSchema = z.object({
   gtin: z.string(), lot_no: z.string().min(1).max(40), mfg_date: text, exp_date: text, lot_status: z.string().max(40).nullable(),
@@ -56,7 +56,7 @@ function nullFields(record: object): string[] {
 const normalizeProduct = (item: z.infer<typeof itemSchema>): ProductIdentity => ({
   gtin: item.gtin, productName: item.description, brand: item.brand, manufacturer: item.company,
   nafdacNumber: item.nafdac_reg, strength: item.strength, dosageForm: item.form,
-  ingredients: item.actives, category: item.category,
+  ingredients: item.actives, category: item.category, packSize: item.pack_size ?? null,
 });
 
 const normalizeBatch = (lot: z.infer<typeof lotSchema>): BatchIdentity => ({

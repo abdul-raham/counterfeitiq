@@ -13,11 +13,12 @@ Everything scanned in this demo is fictional. Scanning uses no AI quota. Only pa
 | `1-product.png` | Product and manufacturer only | `2000000001012` |
 | `2-product-no-batch-data.png` | A product with nothing else indexed | `2000000001029` |
 | `3-batch-code.png` | Adds batch details | `(01)02000000001012(10)DX2041` |
-| `4-serialized-pack.png` | Adds pack details. Scan from a second device for the scratch panel question | `(01)02000000001012(10)DX2041(17)280131(21)DEMOSN0001` |
+| `4-serialized-pack.png` | Adds pack details. Scan from a second device for the scratch panel buttons | `(01)02000000001012(10)DX2041(17)280131(21)DEMOSN0001` |
 | `5-recalled-batch.png` | Recall warning | `(01)02000000001012(10)DX2042` |
 | `6-expired-batch.png` | Expired warning | `(01)02000000001012(10)DX1999` |
 | `7-blocked-pack.png` | Blocked pack warning | `(01)02000000001012(21)DEMOSN0003` |
 | `8-incomplete-record.png` | A record with missing details | `2000000002026` |
+| `12-bottled-water.png` | A non-medicine product, with its pack size | `(01)02000000004013(10)WT3001(17)270930(21)DEMOWT0001` |
 | `9-fake-code.png` | "This QR code is fake": unknown product | `2000000009995` |
 | `10-fake-pack.png` | "This QR code is fake": real product, serial never issued | `(01)02000000001012(21)FAKESN0001` |
 | `11-fake-batch.png` | "This QR code is fake": real product, batch never issued | `(01)02000000001012(10)FAKEBATCH` |
@@ -30,7 +31,7 @@ Each code on `/demo` also has an "Open result" link, if a camera fails on stage.
 2. **Scan the product code:** show the product and the manufacturer, and say that this comes from a simulated system. Say that this code identifies the product type, so every pack shares it.
 3. **Scan the serialized pack:** show the batch and pack details.
 4. **Check the package:** tap "No" on the checklist, and tick what differs. That tells us exactly which detail conflicted.
-5. **Scan the same pack from a second phone:** answer "Was the scratch panel intact before this scan?". Intact is a high-risk duplicate. Already scratched goes to the seller. The same device again is treated as a likely rescan.
+5. **Scan the same pack from a second phone:** answer "Did you scratch this panel yourself?". "I've scratched it" is a high-risk duplicate. "I haven't, it came scratched" goes to the seller. The same device again is treated as a likely rescan.
 6. **Scan the recalled batch:** show the warning.
 7. **Scan the fake pack:** the product is real, but the manufacturer never issued that serial number. Show "This QR code is fake", and say why: only a connected manufacturer's packs carry these QR codes, so someone made this one.
 8. **Optional, Inspect packaging:** upload a photo of a pack, and show what Gemma read and how it compares with the registration record.

@@ -34,6 +34,7 @@ export interface ProductIdentity {
   dosageForm: string | null;
   ingredients: string[];
   category: string | null;
+  packSize: string | null;
 }
 
 export type BatchStatus = 'ACTIVE' | 'BLOCKED' | 'RECALLED' | 'UNKNOWN';
