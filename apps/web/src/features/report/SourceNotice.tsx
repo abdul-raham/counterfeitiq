@@ -3,6 +3,7 @@ import { ExternalLink } from 'lucide-react';
 import { StatusMessage } from '../../components/StatusMessage';
 import { isSampleMode } from '../../lib/api';
 import { formatDate, safeExternalUrl } from '../../lib/format';
+import { unavailableReason } from './outcome';
 
 export function SourceNotice({ reference }: { reference: ReferenceLookupResult | null }) {
   if (isSampleMode()) {
@@ -23,7 +24,7 @@ export function SourceNotice({ reference }: { reference: ReferenceLookupResult |
   if (reference.status === 'SOURCE_UNAVAILABLE') {
     return (
       <p className="text-sm text-muted">
-        Source: the registration source could not be reached.
+        Source: {unavailableReason[provenance.mode]}.
         {provenance.note && ` ${provenance.note}`}
       </p>
     );

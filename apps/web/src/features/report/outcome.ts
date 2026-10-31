@@ -1,4 +1,4 @@
-import type { AnalysisResponse, ExtractedProduct, FieldMatch, MedicineReference } from '@counterfeitiq/shared';
+import type { AnalysisResponse, ExtractedProduct, FieldMatch, LookupMode, MedicineReference } from '@counterfeitiq/shared';
 import type { Tone } from '../../components/StatusMessage';
 
 export interface Outcome {
@@ -7,6 +7,13 @@ export interface Outcome {
   caveat: string;
   suggestRetake: boolean;
 }
+
+// Only a live lookup actually tried the official source, so only it may say the source failed.
+export const unavailableReason: Record<LookupMode, string> = {
+  LIVE_OFFICIAL: 'the official NAFDAC source could not be reached',
+  DEMO_FIXTURE: 'no matching demonstration record is available and no live lookup was performed',
+  NOT_EXECUTED: 'no registration source was checked',
+};
 
 export function nothingWasRead(extracted: ExtractedProduct): boolean {
   return !extracted.productName && !extracted.brand && !extracted.nafdacNumber

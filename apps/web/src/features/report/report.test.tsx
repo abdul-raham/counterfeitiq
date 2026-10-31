@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { formatDate } from '../../lib/format';
-import { analysis, fixture, foundFixture, notFound, unavailable } from '../../test/fixtures';
+import { analysis, fixture, foundFixture, live, notExecuted, notFound, unavailable } from '../../test/fixtures';
 import { Report } from './Report';
 import { buildComparisonRows, describeOutcome } from './outcome';
 
@@ -133,10 +133,24 @@ describe('Report', () => {
     expect(screen.getByText(/live NAFDAC Greenbook lookup, checked 30 October 2026/)).toBeInTheDocument();
   });
 
+  it.each([
+    ['LIVE_OFFICIAL', { ...live, authoritative: false }, 'Source: the official NAFDAC source could not be reached.'],
+    ['DEMO_FIXTURE', { ...fixture }, 'Source: no matching demonstration record is available and no live lookup was performed.'],
+    ['NOT_EXECUTED', notExecuted, 'Source: no registration source was checked.'],
+  ] as const)('words an unavailable lookup by what actually ran (%s)', (_mode, provenance, text) => {
+    render(<Report imageUrl={null} response={analysis({
+      reference: { status: 'SOURCE_UNAVAILABLE', record: null, provenance },
+      verification: { status: 'REFERENCE_UNAVAILABLE' },
+    })} />);
+    expect(screen.getByText(text)).toBeInTheDocument();
+    expect(screen.queryByText('Demonstration record, not live NAFDAC data')).not.toBeInTheDocument();
+    expect(screen.queryByText(/live NAFDAC Greenbook/)).not.toBeInTheDocument();
+  });
+
   it('does not attribute anything to NAFDAC when the source failed', () => {
     render(<Report imageUrl={null} response={analysis({ reference: unavailable, verification: { status: 'REFERENCE_UNAVAILABLE' } })} />);
     expect(screen.getByText('Registration records could not be checked')).toBeInTheDocument();
-    expect(screen.getByText(/source could not be reached/)).toBeInTheDocument();
+    expect(screen.queryByText(/could not be reached/)).not.toBeInTheDocument();
     expect(screen.queryByText(/live NAFDAC/)).not.toBeInTheDocument();
   });
 
@@ -145,8 +159,8 @@ describe('Report', () => {
       reference: { status: 'SOURCE_UNAVAILABLE', record: null, provenance: { ...fixture, authoritative: false } },
       verification: { status: 'REFERENCE_UNAVAILABLE' },
     })} />);
-    expect(screen.getByText(/source could not be reached/)).toBeInTheDocument();
-    expect(screen.queryByText(/demonstration record/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/no matching demonstration record/)).toBeInTheDocument();
+    expect(screen.queryByText('Demonstration record, not live NAFDAC data')).not.toBeInTheDocument();
   });
 
   it('lists differences with both values', () => {

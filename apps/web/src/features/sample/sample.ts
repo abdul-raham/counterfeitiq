@@ -181,7 +181,7 @@ const scenarios = {
         registrationExpiryStatus: 'UNKNOWN',
         status: 'REFERENCE_UNAVAILABLE',
         findings: [],
-        summary: 'The registration source could not be reached.',
+        summary: 'No registration source was checked.',
         recommendedActions: ['Try again later, or check the official NAFDAC source directly.'],
       },
     },
