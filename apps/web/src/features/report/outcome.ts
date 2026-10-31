@@ -40,28 +40,28 @@ export function describeOutcome({ extracted, reference, verification }: Analysis
       return outcome(
         verification.packageExpiryStatus === 'EXPIRED' || verification.registrationExpiryStatus === 'EXPIRED' || registrationWarning(reference) ? 'warn' : 'ok',
         demo ? 'Details match a demonstration record' : 'Registration details match',
-        "This does not prove this pack is genuine. Counterfeit packaging can copy a real product's details.",
+        'This does not prove this pack is genuine.',
       );
     case 'DETAILS_MISMATCH':
       return outcome(
         'risk',
         demo ? 'Some details differ from a demonstration record' : 'Some details differ from the registration record',
-        'A difference does not prove the product is fake, but it is a reason to have it checked before using it.',
+        'This does not prove the product is fake. Have it checked before using it.',
       );
     case 'RECORD_NOT_FOUND':
       return outcome(
         'warn',
         'No registration record found',
-        'This does not prove the product is fake. The number may be misread or the record may be listed differently.',
+        'This does not prove the product is fake. Check the number against the pack.',
       );
     case 'REFERENCE_UNAVAILABLE':
       return outcome(
         'warn',
         'Registration records could not be checked',
-        'This says nothing about the product either way, because the comparison did not happen.',
+        '',
       );
     case 'INSUFFICIENT_EVIDENCE': {
-      const caveat = 'This says nothing about the product either way, because no comparison was possible.';
+      const caveat = '';
       if (nothingWasRead(extracted)) return outcome('neutral', 'We could not read enough from this photo', caveat, true);
       // The backend also marks an unread category as unsupported, so this must come first.
       if (!extracted.category?.trim()) return outcome('neutral', 'We could not tell what type of product this is', caveat, true);
@@ -110,7 +110,7 @@ export function buildComparisonRows({ extracted, reference, verification }: Anal
   const record = reference?.status === 'FOUND' ? reference.record : null;
   const known = new Set(COMPARED_FIELDS.map(({ field }) => field));
 
-  const rows: ComparisonRow[] = COMPARED_FIELDS.map(({ field, label, pack, record: fromRecord }) => ({
+  const compared: ComparisonRow[] = COMPARED_FIELDS.map(({ field, label, pack, record: fromRecord }) => ({
     key: field,
     label,
     packValue: pack(extracted),
@@ -128,6 +128,8 @@ export function buildComparisonRows({ extracted, reference, verification }: Anal
       status: finding.status,
     }));
 
+  // A row with nothing to compare only adds noise. What the pack says is shown elsewhere.
+  const rows = compared.filter((row) => (record ? row.recordValue : row.packValue));
   return [...rows, ...others];
 }
 
@@ -135,10 +137,6 @@ export function unreadFields(extracted: ExtractedProduct): string[] {
   const fields: [string, boolean][] = [
     ['product name', !extracted.productName],
     ['NAFDAC number', !extracted.nafdacNumber],
-    ['manufacturer', !extracted.manufacturer],
-    ['strength', !extracted.strength],
-    ['ingredients', extracted.ingredients.length === 0],
-    ['batch number', !extracted.batchNumber],
     ['printed expiry date', !extracted.expiryDate],
   ];
   return fields.filter(([, missing]) => missing).map(([label]) => label);

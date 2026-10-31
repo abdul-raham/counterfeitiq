@@ -76,6 +76,13 @@ describe('Greenbook exact match', () => {
         ingredients: ['Hepatitis B vaccine'],
         registrationExpiry: '2028-05-30',
         retrievedAt: ISO,
+        applicant: 'Biovaccines Nigeria Ltd',
+        packSize: "0.5 mL x 10's (in Pre-filled syringes)",
+        registrationStatus: 'Active',
+        productCategory: null,
+        dosageForm: null,
+        route: null,
+        approvalDate: '2023-06-04',
       },
       provenance: {
         source: 'NAFDAC_GREENBOOK', mode: 'LIVE_OFFICIAL', authoritative: true, requestedAt: ISO, sourceUrl: GREENBOOK_URL,
@@ -428,9 +435,9 @@ describe('provider selection', () => {
     }).lookupMedicine('A6-100103');
     for (const result of [demo, live]) {
       expect(isReferenceLookupResult(result)).toBe(true);
-      expect(Object.keys(result.record ?? {}).sort()).toEqual([
+      expect(Object.keys(result.record ?? {})).toEqual(expect.arrayContaining([
         'ingredients', 'manufacturer', 'nafdacNumber', 'productName', 'registrationExpiry', 'retrievedAt', 'strength',
-      ]);
+      ]));
     }
   });
 

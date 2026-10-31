@@ -29,11 +29,12 @@ function ExpiryCell({ title, source, date, status }: { title: string; source: st
   );
 }
 
-function Detail({ label, value }: { label: string; value: string | null }) {
+function Detail({ label, value }: { label: string; value: string | null | undefined }) {
+  if (!value) return null;
   return (
     <div>
       <dt className="text-xs text-muted">{label}</dt>
-      <dd className={value ? 'break-words font-medium' : 'text-muted'}>{value ?? 'Not available'}</dd>
+      <dd className="break-words font-medium">{value}</dd>
     </div>
   );
 }
@@ -47,10 +48,13 @@ export function Report({ response, imageUrl }: { response: AnalysisResponse; ima
   const warning = registrationWarning(reference);
   const rows = buildComparisonRows(response);
   const differences = verification.findings.filter((finding) => finding.status === 'MISMATCH');
-  const uncertain = verification.findings.filter((finding) => finding.status === 'UNKNOWN');
+  const uncertain = verification.findings.filter((finding) => finding.status === 'UNKNOWN' && finding.referenceValue !== null);
   const unread = unreadFields(extracted);
   const unreadable = nothingWasRead(extracted);
   const category = extracted.category && extracted.category.charAt(0).toUpperCase() + extracted.category.slice(1);
+  const printedWarnings = extracted.printedWarnings ?? [];
+  const hasPrintedDetails = Boolean(extracted.dosageForm || extracted.packSize || extracted.directions || extracted.storage || printedWarnings.length);
+  const hasRecordDetails = Boolean(record && (record.applicant || record.packSize || record.registrationStatus || record.productCategory || record.dosageForm || record.route || record.approvalDate));
 
   return (
     <div>
@@ -64,14 +68,12 @@ export function Report({ response, imageUrl }: { response: AnalysisResponse; ima
         <tone.icon aria-hidden="true" className={`size-6 ${tone.text}`} />
         <p className={`mt-3 text-2xl font-semibold leading-tight tracking-tight ${tone.text}`}>{outcome.title}</p>
         <p className="mt-2 leading-relaxed">{verification.summary}</p>
-        <p className="mt-3 border-t border-ink/10 pt-3 text-sm leading-relaxed">{outcome.caveat}</p>
+        {outcome.caveat && <p className="mt-3 border-t border-ink/10 pt-3 text-sm leading-relaxed">{outcome.caveat}</p>}
       </motion.section>
 
       {verification.packageExpiryStatus === 'EXPIRED' && (
         <div className="mt-3">
-          <StatusMessage tone="risk" title="The expiry date printed on this pack has passed">
-            This is separate from the registration result above.
-          </StatusMessage>
+          <StatusMessage tone="risk" title="The expiry date printed on this pack has passed" />
         </div>
       )}
 
@@ -86,7 +88,7 @@ export function Report({ response, imageUrl }: { response: AnalysisResponse; ima
       {verification.registrationExpiryStatus === 'EXPIRED' && (
         <div className="mt-3">
           <StatusMessage tone="warn" title={`The expiry date on the ${recordName} has passed`}>
-            This is separate from the date printed on the pack. Confirm the current registration status with NAFDAC.
+            Confirm the current registration status with NAFDAC.
           </StatusMessage>
         </div>
       )}
@@ -118,6 +120,9 @@ export function Report({ response, imageUrl }: { response: AnalysisResponse; ima
                 <Detail label="Product" value={extracted.productName} />
                 <Detail label="Category" value={category} />
                 <Detail label="Brand" value={extracted.brand} />
+                <Detail label="Manufacturer" value={extracted.manufacturer} />
+                <Detail label="Form" value={extracted.dosageForm} />
+                <Detail label="Pack size" value={extracted.packSize} />
                 <Detail label="Batch number" value={extracted.batchNumber} />
                 <Detail label="Manufacturing date" value={formatDate(extracted.manufacturingDate)} />
               </dl>
@@ -139,23 +144,53 @@ export function Report({ response, imageUrl }: { response: AnalysisResponse; ima
             </div>
           </ReportSection>
 
+          {record && hasRecordDetails && (
+            <ReportSection title={`On the ${recordName}`}>
+              <dl className="grid grid-cols-1 gap-3 rounded-lg border border-line bg-surface p-4 text-sm sm:grid-cols-2">
+                <Detail label="Applicant" value={record.applicant} />
+                <Detail label="Status" value={record.registrationStatus} />
+                <Detail label="Pack size" value={record.packSize} />
+                <Detail label="Category" value={record.productCategory} />
+                <Detail label="Form" value={record.dosageForm} />
+                <Detail label="Route" value={record.route} />
+                <Detail label="Approved" value={formatDate(record.approvalDate ?? null)} />
+              </dl>
+            </ReportSection>
+          )}
+
+          {(extracted.directions || extracted.storage || printedWarnings.length > 0) && hasPrintedDetails && (
+            <ReportSection title="As printed on the pack">
+              <div className="space-y-3 rounded-lg border border-line bg-surface p-4 text-sm leading-relaxed">
+                {extracted.directions && <div><h3 className="text-xs text-muted">Directions</h3><p className="font-medium">{extracted.directions}</p></div>}
+                {extracted.storage && <div><h3 className="text-xs text-muted">Storage</h3><p className="font-medium">{extracted.storage}</p></div>}
+                {printedWarnings.length > 0 && (
+                  <div>
+                    <h3 className="text-xs text-muted">Warnings on the pack</h3>
+                    <ul className="list-disc pl-5 font-medium">
+                      {printedWarnings.map((item) => <li key={item}>{item}</li>)}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </ReportSection>
+          )}
+
           <ReportSection title="Expiry dates">
-            <p className="mb-3 text-sm leading-relaxed text-muted">
-              These are two different dates. One is about this pack, the other is about the product's registration.
-            </p>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className={`grid gap-3 ${record ? 'sm:grid-cols-2' : ''}`}>
               <ExpiryCell
                 title="Printed pack expiry"
                 source="Read from the packaging"
                 date={extracted.expiryDate}
                 status={verification.packageExpiryStatus}
               />
-              <ExpiryCell
-                title="Registration expiry"
-                source={record ? `From the ${recordName}` : 'No record was checked'}
-                date={record?.registrationExpiry ?? null}
-                status={verification.registrationExpiryStatus}
-              />
+              {record && (
+                <ExpiryCell
+                  title="Registration expiry"
+                  source={`From the ${recordName}`}
+                  date={record.registrationExpiry}
+                  status={verification.registrationExpiryStatus}
+                />
+              )}
             </div>
           </ReportSection>
         </>

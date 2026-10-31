@@ -25,13 +25,23 @@ Rules:
 - Never identify a product from its colours, layout or shape.
 - If any character of the NAFDAC registration number is covered, blurred or uncertain, use null for nafdacNumber.
 - If several different products are visible, describe only the most prominent one.
-- Write dates as YYYY-MM-DD, or YYYY-MM when no day is printed. Use null if the date is ambiguous.`;
+- Write dates as YYYY-MM-DD, or YYYY-MM when no day is printed. Use null if the date is ambiguous.
+
+Also include these keys, using null when not printed:
+- dosageForm: for example tablet, capsule, syrup or injection.
+- packSize: the quantity in the pack.
+- directions: how the pack says to use the product, in at most 200 characters.
+- storage: how the pack says to store it, in at most 120 characters.
+- printedWarnings: an array of at most 5 warnings printed on the pack, or an empty array.
+Copy these from the pack. Never add advice or information that is not printed.`;
 
 const TEXT_FIELDS = [
   'productName', 'brand', 'nafdacNumber', 'manufacturer', 'strength',
   'batchNumber', 'manufacturingDate', 'expiryDate',
 ] as const;
-const CONTRACT_KEYS = new Set<string>(['category', 'ingredients', ...TEXT_FIELDS]);
+const REQUIRED_KEYS = ['category', 'ingredients', ...TEXT_FIELDS];
+const OPTIONAL_TEXT_FIELDS = ['dosageForm', 'packSize', 'directions', 'storage'] as const;
+const CONTRACT_KEYS = new Set<string>([...REQUIRED_KEYS, ...OPTIONAL_TEXT_FIELDS, 'printedWarnings']);
 const CATEGORIES = new Set(['medicine', 'food', 'cosmetic', 'other']);
 const EMPTY_VALUES = new Set(['', 'null', 'none', 'n/a', 'na', 'unknown', 'not visible', 'unreadable', '-']);
 const RATE_LIMIT_PATTERN = /\b(?:429|3036|3040|4006)\b|rate limit|too many requests|capacity|daily free allocation/i;
@@ -85,17 +95,29 @@ export function parseModelOutput(reply: string): ExtractedProduct {
 
   const output = parsed as Record<string, unknown>;
   const keys = Object.keys(output);
-  if (keys.length !== CONTRACT_KEYS.size || !keys.every((key) => CONTRACT_KEYS.has(key))) throw malformedOutput('wrong_keys');
+  if (!REQUIRED_KEYS.every((key) => keys.includes(key)) || !keys.every((key) => CONTRACT_KEYS.has(key))) throw malformedOutput('wrong_keys');
 
   const isNullableText = (value: unknown): value is string | null => typeof value === 'string' || value === null;
   const { category, ingredients } = output;
   if (!isNullableText(category) || !TEXT_FIELDS.every((field) => isNullableText(output[field]))) throw malformedOutput('wrong_value_type');
   if (!Array.isArray(ingredients) || !ingredients.every((item) => typeof item === 'string')) throw malformedOutput('wrong_ingredients');
 
+  if (!OPTIONAL_TEXT_FIELDS.every((field) => output[field] === undefined || isNullableText(output[field]))) throw malformedOutput('wrong_value_type');
+  const { printedWarnings } = output;
+  if (printedWarnings !== undefined && (!Array.isArray(printedWarnings) || !printedWarnings.every((item) => typeof item === 'string'))) throw malformedOutput('wrong_warnings');
+
   const normalizedCategory = cleanText(category)?.toLowerCase() ?? null;
   if (normalizedCategory !== null && !CATEGORIES.has(normalizedCategory)) throw malformedOutput('unknown_category');
 
   const text = (field: (typeof TEXT_FIELDS)[number]) => cleanText(output[field] as string | null);
+  const optional: Partial<ExtractedProduct> = {};
+  for (const field of OPTIONAL_TEXT_FIELDS) {
+    if (output[field] !== undefined) optional[field] = cleanText(output[field] as string | null);
+  }
+  if (printedWarnings !== undefined) {
+    optional.printedWarnings = (printedWarnings as string[]).map(cleanText).filter((item): item is string => item !== null);
+  }
+
   return {
     category: normalizedCategory,
     productName: text('productName'),
@@ -107,6 +129,7 @@ export function parseModelOutput(reply: string): ExtractedProduct {
     batchNumber: text('batchNumber'),
     manufacturingDate: text('manufacturingDate'),
     expiryDate: text('expiryDate'),
+    ...optional,
   };
 }
 

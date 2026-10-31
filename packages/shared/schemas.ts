@@ -39,6 +39,11 @@ export interface ExtractedProduct {
   batchNumber: string | null;
   manufacturingDate: string | null;
   expiryDate: string | null;
+  dosageForm?: string | null;
+  packSize?: string | null;
+  directions?: string | null;
+  storage?: string | null;
+  printedWarnings?: string[];
 }
 
 export interface MedicineReference {
@@ -49,6 +54,13 @@ export interface MedicineReference {
   ingredients: string[];
   registrationExpiry: string | null;
   retrievedAt: string;
+  applicant?: string | null;
+  packSize?: string | null;
+  registrationStatus?: string | null;
+  productCategory?: string | null;
+  dosageForm?: string | null;
+  route?: string | null;
+  approvalDate?: string | null;
 }
 
 type LiveProvenance = ReferenceProvenance & {

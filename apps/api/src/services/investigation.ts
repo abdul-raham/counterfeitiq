@@ -78,7 +78,9 @@ export function buildInvestigation(
 
   const findings = buildFindings(extracted, reference.record);
   const mismatches = findings.filter((finding) => finding.status === 'MISMATCH');
-  const unknowns = findings.filter((finding) => finding.status === 'UNKNOWN');
+  // Live records never list a manufacturer, so that gap says nothing about this pack.
+  const unknowns = findings.filter((finding) => finding.status === 'UNKNOWN'
+    && !(finding.field === 'manufacturer' && finding.referenceValue === null));
   const registrationNumberMatched = findings.some(
     (finding) => finding.field === 'nafdacNumber' && finding.status === 'MATCH',
   );
@@ -109,14 +111,14 @@ export function buildInvestigation(
   if (unknowns.length) {
     return {
       ...base, status: 'REGISTRATION_DETAILS_MATCH', findings,
-      summary: `The registration number and available core details match, but some fields were unavailable. This does not confirm physical authenticity.${fixtureNote}${expirySummary}`,
+      summary: `The registration number and available core details match, but some fields were unavailable.${fixtureNote}${expirySummary}`,
       recommendedActions: ['Some details could not be compared. Treat them as unknown, not as matches.', ...expiryActions],
     };
   }
 
   return {
     ...base, status: 'REGISTRATION_DETAILS_MATCH', findings,
-    summary: `Package details match the available registration record. This does not confirm physical authenticity.${fixtureNote}${expirySummary}`,
+    summary: `Package details match the available registration record.${fixtureNote}${expirySummary}`,
     recommendedActions: ['Inspect package integrity and purchase only from a trusted seller.', ...expiryActions],
   };
 }

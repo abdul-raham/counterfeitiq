@@ -164,6 +164,13 @@ function toMedicineReference(row: Record<string, unknown>, retrievedAt: string):
     ingredients: ingredient ? [ingredient] : [],
     registrationExpiry: expiry && /^\d{4}-\d{2}-\d{2}$/.test(expiry) ? expiry : null,
     retrievedAt,
+    applicant: nestedText(row, 'applicant', 'name'),
+    packSize: cleanText(row.pack_size),
+    registrationStatus: cleanText(row.status),
+    productCategory: nestedText(row, 'product_category', 'name'),
+    dosageForm: nestedText(row, 'form', 'name'),
+    route: nestedText(row, 'route', 'name'),
+    approvalDate: cleanText(row.approval_date),
   };
 }
 
