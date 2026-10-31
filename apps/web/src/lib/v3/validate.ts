@@ -43,6 +43,11 @@ function identifierFromAppLink(text: string): string | null {
   }
 }
 
+/** Whether scanned text is a QR link from this app, as opposed to an ordinary barcode or other code. */
+export function isAppLink(raw: string): boolean {
+  return identifierFromAppLink(raw.trim()) !== null;
+}
+
 /**
  * Tidies scanned or typed text for the server, which does the real parsing. Scanners can start a
  * GS1 code with a GS character, which is a marker and not data. GS may remain inside a code, as

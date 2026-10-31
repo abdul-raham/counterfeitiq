@@ -6,6 +6,7 @@ import { InspectPage } from './pages/InspectPage';
 import { InspectReportPage } from './pages/InspectReportPage';
 import { LookupPage } from './pages/LookupPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { DemoPage } from './pages/public/DemoPage';
 import { HelpPage } from './pages/public/HelpPage';
 import { ProductPage } from './pages/public/ProductPage';
 import { ReportConcernPage } from './pages/public/ReportConcernPage';
@@ -18,6 +19,7 @@ export function App() {
         <Route element={<Layout />}>
           <Route index element={<HomePage />} />
           <Route path="scan" element={<ScanPage />} />
+          <Route path="demo" element={<DemoPage />} />
           <Route path="product/:identifier" element={<ProductPage />} />
           <Route path="inspect" element={<InspectPage />} />
           <Route path="inspect/report" element={<InspectReportPage />} />

@@ -17,8 +17,9 @@ In the proposed model, manufacturers keep their products indexed in their own ER
 
 ## What it can and cannot tell you
 
-- A record does not prove a pack is genuine, because a code can be copied. CounterfeitIQ never gives an authenticity verdict or score.
-- A missing or unavailable record does not prove a product is fake.
+- A record does not prove a pack is genuine, because a code can be copied. So a found record is never called genuine.
+- A CounterfeitIQ QR code that the manufacturer's records don't hold is called fake, because only a connected manufacturer's packs carry these codes. This covers an unknown product, serial number or batch.
+- A typed code or an ordinary barcode with no record is never called fake, and neither is any code when the source can't answer.
 - A repeat scan of a serialized pack is information to look into. The app asks whether the pack is sealed, and suggests a next step. Codes that only identify the product are shared by every pack, so they never show repeats.
 
 ## How it works
