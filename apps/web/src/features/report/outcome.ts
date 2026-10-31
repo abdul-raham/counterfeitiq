@@ -48,6 +48,8 @@ export function describeOutcome({ extracted, reference, verification }: Analysis
     case 'INSUFFICIENT_EVIDENCE': {
       const caveat = 'This says nothing about the product either way, because no comparison was possible.';
       if (nothingWasRead(extracted)) return outcome('neutral', 'We could not read enough from this photo', caveat, true);
+      // The backend also marks an unread category as unsupported, so this must come first.
+      if (!extracted.category?.trim()) return outcome('neutral', 'We could not tell what type of product this is', caveat, true);
       if (!verification.categoryVerificationSupported) {
         return outcome('neutral', 'Registration check is not available for this product type', caveat);
       }

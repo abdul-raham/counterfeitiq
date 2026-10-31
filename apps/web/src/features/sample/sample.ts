@@ -45,10 +45,10 @@ const liveProvenance = {
 } as const;
 
 const unavailableProvenance = {
-  source: 'NAFDAC_GREENBOOK',
+  source: 'NONE',
   mode: 'NOT_EXECUTED',
   authoritative: false,
-  requestedAt: RETRIEVED_AT,
+  requestedAt: null,
 } as const;
 
 function matchFinding(field: string, value: string) {

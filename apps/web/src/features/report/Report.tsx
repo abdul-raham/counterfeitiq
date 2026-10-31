@@ -43,7 +43,7 @@ export function Report({ response, imageUrl }: { response: AnalysisResponse; ima
   const outcome = describeOutcome(response);
   const tone = toneStyles[outcome.tone];
   const record = reference?.status === 'FOUND' ? reference.record : null;
-  const recordName = reference?.provenance.mode === 'DEMO_FIXTURE' ? 'demonstration record' : 'registration record';
+  const recordName = record && reference?.provenance.mode === 'DEMO_FIXTURE' ? 'demonstration record' : 'registration record';
   const rows = buildComparisonRows(response);
   const differences = verification.findings.filter((finding) => finding.status === 'MISMATCH');
   const uncertain = verification.findings.filter((finding) => finding.status === 'UNKNOWN');

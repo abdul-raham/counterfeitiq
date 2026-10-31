@@ -13,11 +13,21 @@ export function SourceNotice({ reference }: { reference: ReferenceLookupResult |
     );
   }
 
-  if (!reference || reference.provenance.mode === 'NOT_EXECUTED' && reference.status !== 'SOURCE_UNAVAILABLE') {
+  if (!reference) {
     return <p className="text-sm text-muted">Source: no registration source was checked.</p>;
   }
 
   const { provenance } = reference;
+
+  // Checked first: an unavailable lookup has no record, whatever mode it ran in.
+  if (reference.status === 'SOURCE_UNAVAILABLE') {
+    return (
+      <p className="text-sm text-muted">
+        Source: the registration source could not be reached.
+        {provenance.note && ` ${provenance.note}`}
+      </p>
+    );
+  }
 
   if (provenance.mode === 'DEMO_FIXTURE') {
     return (
@@ -25,15 +35,6 @@ export function SourceNotice({ reference }: { reference: ReferenceLookupResult |
         This record is included for demonstration only and must not be relied on.
         {provenance.note && <span className="mt-1 block text-muted">{provenance.note}</span>}
       </StatusMessage>
-    );
-  }
-
-  if (reference.status === 'SOURCE_UNAVAILABLE') {
-    return (
-      <p className="text-sm text-muted">
-        Source: the registration source could not be reached.
-        {provenance.note && ` ${provenance.note}`}
-      </p>
     );
   }
 
