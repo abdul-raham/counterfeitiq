@@ -174,6 +174,62 @@ describe('product result', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
+  it('calls a QR code fake when the manufacturer has no record of it', async () => {
+    serve({ ...empty, outcome: 'NOT_FOUND' });
+    const { container } = renderAt('/product/qr-none?qr=1');
+    expect(await screen.findByText('This QR code is fake')).toBeInTheDocument();
+    expect(screen.getByText(/Do not use this medicine/)).toBeInTheDocument();
+    expect((await axe.run(container)).violations).toEqual([]);
+  });
+
+  it('calls a QR code fake for a serial or batch the manufacturer never issued', async () => {
+    serve({ ...found, warnings: [{ code: 'SERIAL_NOT_FOUND', explanation: 'The source has no pack with this serial number.' }] });
+    const first = renderAt('/product/qr-serial?qr=1');
+    expect(await screen.findByText('This QR code is fake')).toBeInTheDocument();
+    expect(screen.getByText(/claims to be Demozol 500 mg Tablets/)).toBeInTheDocument();
+    first.unmount();
+
+    serve({
+      ...found,
+      identifier: { ...found.identifier, batchNumber: 'NOPE' },
+      warnings: [{ code: 'BATCH_DATA_UNAVAILABLE', explanation: 'Batch details could not be confirmed from the source.' }],
+      sources: [demoSource, { ...demoSource, retrievalStatus: 'NOT_FOUND' }],
+    });
+    renderAt('/product/qr-batch?qr=1');
+    expect(await screen.findByText('This QR code is fake')).toBeInTheDocument();
+  });
+
+  it('never calls a QR code fake when the source could not answer', async () => {
+    serve({ ...empty, outcome: 'SOURCE_UNAVAILABLE', explanation: 'The manufacturer source could not answer.' });
+    const first = renderAt('/product/qr-down?qr=1');
+    expect(await screen.findByText('We could not check this code')).toBeInTheDocument();
+    expect(screen.queryByText('This QR code is fake')).not.toBeInTheDocument();
+    first.unmount();
+
+    serve({
+      ...found,
+      identifier: { ...found.identifier, batchNumber: 'DX2041' },
+      warnings: [{ code: 'BATCH_DATA_UNAVAILABLE', explanation: 'Batch details could not be confirmed from the source.' }],
+      sources: [demoSource, { ...demoSource, retrievalStatus: 'UNAVAILABLE' }],
+    });
+    renderAt('/product/qr-batch-down?qr=1');
+    expect(await screen.findByText('Demozol 500 mg Tablets')).toBeInTheDocument();
+    expect(screen.queryByText('This QR code is fake')).not.toBeInTheDocument();
+  });
+
+  it('never calls a typed code fake', async () => {
+    serve({ ...found, warnings: [{ code: 'SERIAL_NOT_FOUND', explanation: 'The source has no pack with this serial number.' }] });
+    renderAt('/product/typed-serial');
+    expect(await screen.findByText('Demozol 500 mg Tablets')).toBeInTheDocument();
+    expect(screen.queryByText('This QR code is fake')).not.toBeInTheDocument();
+  });
+
+  it('lists every demo code with an image and a scanned-QR link', () => {
+    renderAt('/demo');
+    expect(screen.getAllByRole('img')).toHaveLength(11);
+    expect(screen.getByRole('link', { name: 'Open result: Fake pack' })).toHaveAttribute('href', '/product/(01)02000000001012(21)FAKESN0001?qr=1');
+  });
+
   it('separates no record, an unavailable source and an unreadable code', async () => {
     serve({ ...empty, outcome: 'NOT_FOUND' });
     const first = renderAt('/product/x-none');
@@ -280,8 +336,8 @@ describe('report a concern', () => {
 describe('demo codes', () => {
   it('are labelled fictional', async () => {
     const fetchMock = serve(found);
-    renderAt('/scan');
-    expect(screen.getByText('These use fictional companies and products.')).toBeInTheDocument();
+    renderAt('/demo');
+    expect(screen.getByText(/Every company and product here is fictional/)).toBeInTheDocument();
     await user.click(screen.getByRole('link', { name: 'Product code' }));
     await screen.findByText('Demozol 500 mg Tablets');
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain('identifier=2000000001012');

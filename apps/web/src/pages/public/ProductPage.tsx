@@ -1,5 +1,5 @@
 import { useCallback, type ReactNode } from 'react';
-import { useLocation, useParams } from 'react-router';
+import { useLocation, useParams, useSearchParams } from 'react-router';
 import { Flag, QrCode, ScanSearch } from 'lucide-react';
 import { Button, ButtonLink } from '../../components/Button';
 import { ErrorState } from '../../components/ErrorState';
@@ -21,6 +21,20 @@ const QUIET_WARNINGS = new Set(['SCAN_HISTORY_UNAVAILABLE', 'PACK_DATA_UNAVAILAB
 function warningTone(code: string): Tone {
   if (SERIOUS_WARNINGS.has(code)) return 'risk';
   return QUIET_WARNINGS.has(code) ? 'neutral' : 'warn';
+}
+
+const MANUFACTURER_SOURCES = new Set<Provenance['sourceType']>(['SIMULATED_ERP', 'MANUFACTURER_API']);
+
+/**
+ * Only a connected manufacturer's codes go into a CounterfeitIQ QR code, so one its records don't
+ * hold was not issued by it. A source that could not answer is never enough to say this.
+ */
+function isFakeQrCode({ outcome, warnings, identifier, batch, sources }: ProductReport): boolean {
+  if (outcome === 'NOT_FOUND' || outcome === 'INVALID_IDENTIFIER') return true;
+  if (outcome !== 'RESOLVED') return false;
+  if (warnings.some((warning) => warning.code === 'SERIAL_NOT_FOUND')) return true;
+  return Boolean(identifier.batchNumber) && !batch
+    && sources.some((source) => MANUFACTURER_SOURCES.has(source.sourceType) && source.retrievalStatus === 'NOT_FOUND');
 }
 
 function title(value: string | null): string | null {
@@ -63,8 +77,21 @@ function Sources({ sources }: { sources: Provenance[] }) {
   return <p className="text-sm text-muted">Source: {names.join(', ')}.{retrievedAt && ` Retrieved ${retrievedAt}.`}</p>;
 }
 
-function LookupResult({ report, reportLink, code }: { report: ProductReport; reportLink: string; code: string }) {
+function LookupResult({ report, reportLink, code, fromQr }: { report: ProductReport; reportLink: string; code: string; fromQr: boolean }) {
   const { outcome, product, batch, pack, sources, warnings, explanation, notice, scanSignal, identityLevel, registrationReference } = report;
+
+  if (fromQr && isFakeQrCode(report)) {
+    return (
+      <div className="mt-6 space-y-4">
+        <StatusMessage tone="risk" title="This QR code is fake" role="alert">
+          This code is not in the manufacturer's records, so it did not come from them. Do not use this medicine. Show it to a pharmacist, and report it.
+          {product && <span className="mt-1 block">The code claims to be {product.productName}{product.manufacturer && ` from ${product.manufacturer}`}.</span>}
+        </StatusMessage>
+        <p className="break-all text-sm text-muted">Code: {code}</p>
+        <Sources sources={sources} />
+      </div>
+    );
+  }
 
   if (outcome === 'INVALID_IDENTIFIER') {
     return (
@@ -169,6 +196,7 @@ function LookupResult({ report, reportLink, code }: { report: ProductReport; rep
 export function ProductPage() {
   const identifier = useParams().identifier ?? '';
   const location = useLocation();
+  const fromQr = useSearchParams()[0].get('qr') === '1';
   const { data, error, loading, reload } = useResource(useCallback(
     () => scanOnce(location.key, identifier),
     [location.key, identifier],
@@ -194,7 +222,7 @@ export function ProductPage() {
         </div>
       )}
 
-      {data && <LookupResult report={data} reportLink={reportLink} code={identifier} />}
+      {data && <LookupResult report={data} reportLink={reportLink} code={identifier} fromQr={fromQr} />}
 
       {!loading && (
         <div className="mt-8 flex flex-col gap-3 border-t border-line pt-6">

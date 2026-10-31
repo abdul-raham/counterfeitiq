@@ -50,7 +50,7 @@ export function HomePage() {
       <section aria-labelledby="limits" className="border-t border-line py-12">
         <h2 id="limits" className="text-xl font-semibold tracking-tight">What this can and cannot tell you</h2>
         <p className="mt-3 max-w-2xl leading-relaxed text-muted">
-          A record shows what a manufacturer holds for a code. It does not prove a pack is genuine, because a code can be copied. A missing record does not prove a product is fake. This demonstration uses fictional companies and products.
+          A record shows what a manufacturer holds for a code. It does not prove a pack is genuine, because a code can be copied. A CounterfeitIQ QR code missing from the manufacturer's records is fake. This demonstration uses fictional companies and products.
         </p>
       </section>
     </div>

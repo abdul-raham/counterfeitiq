@@ -7,8 +7,7 @@ import { PageHeading } from '../../components/PageHeading';
 import { StatusMessage } from '../../components/StatusMessage';
 import { BarcodeScanner, canUseCameraScanner } from '../../features/scan/BarcodeScanner';
 import { decodeImageFile } from '../../features/scan/decode';
-import { DemoCodes } from '../../features/scan/DemoCodes';
-import { cleanIdentifier } from '../../lib/v3/validate';
+import { cleanIdentifier, isAppLink } from '../../lib/v3/validate';
 
 export function ScanPage() {
   const navigate = useNavigate();
@@ -19,14 +18,14 @@ export function ScanPage() {
   const [inputError, setInputError] = useState<string | null>(null);
   const imageInput = useRef<HTMLInputElement>(null);
 
-  const openProduct = useCallback((identifier: string) => {
-    navigate(`/product/${encodeURIComponent(identifier)}`);
+  const openProduct = useCallback((identifier: string, fromQr = false) => {
+    navigate(`/product/${encodeURIComponent(identifier)}${fromQr ? '?qr=1' : ''}`);
   }, [navigate]);
 
   const handleDetect = useCallback((text: string) => {
     const identifier = cleanIdentifier(text);
     setCameraOpen(false);
-    if (identifier) openProduct(identifier);
+    if (identifier) openProduct(identifier, isAppLink(text));
     else setNotice('We could not use that code. Try again, or type the code printed next to it.');
   }, [openProduct]);
 
@@ -44,7 +43,7 @@ export function ScanPage() {
     const text = await decodeImageFile(file);
     setReading(false);
     const identifier = text && cleanIdentifier(text);
-    if (identifier) openProduct(identifier);
+    if (identifier) openProduct(identifier, isAppLink(text));
     else setNotice('We could not find a QR code in that photo. Try a sharper photo of just the code, or type it.');
   }
 
@@ -111,13 +110,14 @@ export function ScanPage() {
         </Button>
       </form>
 
-      <DemoCodes />
-
       <p className="mt-8 text-center text-sm text-muted">
         No QR code?{' '}
         <Link to="/inspect" className="rounded-sm text-ink underline underline-offset-4">Inspect the packaging</Link>
         {' or '}
         <Link to="/lookup" className="rounded-sm text-ink underline underline-offset-4">look up a NAFDAC number</Link>.
+      </p>
+      <p className="mt-2 text-center text-sm text-muted">
+        <Link to="/demo" className="rounded-sm text-ink underline underline-offset-4">Try the demo QR codes</Link>
       </p>
     </div>
   );

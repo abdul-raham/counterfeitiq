@@ -4,7 +4,7 @@ CounterfeitIQ reads a product photo and compares what it finds with the NAFDAC G
 
 ## Rules that must not be broken
 
-- A registry match never proves a pack is genuine, and missing data never proves it is fake.
+- A registry match never proves a pack is genuine, and missing data never proves it is fake. The one exception is a CounterfeitIQ QR code (`?qr=1`) that a connected manufacturer's complete answer says it has no record of: the product owner decided this is called fake.
 - A failed, blocked or timed-out lookup is `SOURCE_UNAVAILABLE`, never `NOT_FOUND`. Only a complete live answer can be `NOT_FOUND`.
 - Greenbook matches must be exact on the normalized registration number. Never take the first result.
 - Fixture data must stay labelled `DEMO_FIXTURE`. A fixture miss is never `NOT_FOUND`, and real registration numbers do not belong in the fixtures.
