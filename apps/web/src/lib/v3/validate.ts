@@ -29,15 +29,30 @@ export function isProductReport(value: unknown): value is ProductReport {
 }
 
 const MAX_IDENTIFIER_LENGTH = 256;
+const APP_HOSTS = ['counterfeitiq.vercel.app'];
+
+/** A QR code holds a link to this app's product page, so a phone's camera can open it directly. */
+function identifierFromAppLink(text: string): string | null {
+  try {
+    const url = new URL(text);
+    const ours = APP_HOSTS.includes(url.hostname) || url.host === window.location.host;
+    const encoded = /^\/product\/([^/]+)\/?$/.exec(url.pathname)?.[1];
+    return ours && encoded ? decodeURIComponent(encoded) : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Tidies scanned or typed text for the server, which does the real parsing. Scanners can start a
  * GS1 code with a GS character, which is a marker and not data. GS may remain inside a code, as
- * the separator GS1 uses. A scanned web address stays text, so a code can't send anyone to a site.
+ * the separator GS1 uses. A link to this app's product page gives up its code. Any other web
+ * address stays text, so a code can't send anyone to a site.
  */
 export function cleanIdentifier(raw: string): string | null {
+  const trimmed = raw.trim();
   // eslint-disable-next-line no-control-regex
-  const text = raw.trim().replace(/^\u001d+/, '');
+  const text = (identifierFromAppLink(trimmed) ?? trimmed).replace(/^\u001d+/, '');
   if (text.length < 4 || text.length > MAX_IDENTIFIER_LENGTH) return null;
   // eslint-disable-next-line no-control-regex
   if (/[\u0000-\u001c\u001e-\u001f\u007f]/.test(text)) return null;

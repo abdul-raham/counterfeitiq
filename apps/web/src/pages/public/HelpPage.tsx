@@ -3,10 +3,10 @@ import { PageHeading } from '../../components/PageHeading';
 
 const answers = [
   { q: 'What does scanning tell me?', a: 'It shows what the manufacturer has on record for that code, such as the product, batch and pack details, and where that information came from.' },
-  { q: 'Does finding a record mean the medicine is genuine?', a: 'No. A barcode can be copied, so a record does not prove what is inside the pack. Also check the seal and print, and buy from a licensed pharmacy.' },
+  { q: 'Does finding a record mean the medicine is genuine?', a: 'No. A QR code can be copied, so a record does not prove what is inside the pack. Also check the seal and print, and buy from a licensed pharmacy.' },
   { q: 'Does "no record found" mean it is fake?', a: 'No. It means the connected source has no record of that code. Not every manufacturer is connected, so ask a pharmacist if you are unsure.' },
   { q: 'What is a demo record?', a: 'This demonstration uses a simulated manufacturer system with fictional companies and products. Records from it are clearly labelled and are not real product data.' },
-  { q: 'Why does it say a pack was scanned before?', a: 'Some packs have their own serial number, so we can tell when the same code is scanned again. That could be you, a shop, a pharmacist or another shopper, so it does not mean the product is fake. We ask whether the pack is sealed, because that changes what to do next. Ordinary barcodes are shared by every pack, so they never show this.' },
+  { q: 'Why does it say a pack was scanned before?', a: 'Some packs have their own serial number, so we can tell when the same code is scanned again. That could be you, a shop, a pharmacist or another shopper, so it does not mean the product is fake. We ask whether the pack is sealed, because that changes what to do next. Codes that only identify the product are shared by every pack, so they never show this.' },
   { q: 'What do you record when I scan?', a: 'For a serialized pack, a scrambled form of its code, how many times it was scanned, when, and a scrambled random value for this browser. It is erased 30 days after the last scan. We do not store your name, location or IP address.' },
   { q: 'What is packaging inspection?', a: 'An optional check where an AI reads a photo of the pack and compares it with registration records. It is separate from scanning, and the AI can misread a photo.' },
   { q: 'Is CounterfeitIQ part of NAFDAC?', a: 'No. CounterfeitIQ is independent, and is not affiliated with or endorsed by NAFDAC.' },

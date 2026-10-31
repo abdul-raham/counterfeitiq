@@ -23,7 +23,7 @@ const found: ProductReport = {
   registrationReference: null,
   scanSignal: null,
   warnings: [],
-  explanation: 'This barcode identifies a product, not one physical pack.',
+  explanation: 'This code identifies a product, not one physical pack.',
   sources: [demoSource],
   physicalAuthenticityConfirmed: false,
   notice: 'It cannot show that a physical medicine is genuine or counterfeit.',
@@ -99,7 +99,7 @@ describe('scanning', () => {
     vi.stubGlobal('navigator', Object.assign(Object.create(navigator), { mediaDevices: undefined }));
     renderAt('/scan');
     expect(screen.queryByRole('button', { name: 'Open camera' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Choose a photo of the barcode' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Choose a photo of the QR code' })).toBeInTheDocument();
   });
 
   it('explains a camera failure and keeps the fallbacks', async () => {
@@ -156,7 +156,7 @@ describe('product result', () => {
     expect(screen.queryByText(/scanned .* before/)).not.toBeInTheDocument();
   });
 
-  it('never shows a repeat notice for an ordinary barcode', async () => {
+  it('never shows a repeat notice for a product-level code', async () => {
     serve({ ...found, scanSignal: { ...pack.scanSignal, totalScans: 50 } });
     renderAt('/product/x-gtin');
     await screen.findByText('Demozol 500 mg Tablets');
@@ -246,6 +246,10 @@ describe('helpers', () => {
     ['(01)02000000001012(21)ABC', '(01)02000000001012(21)ABC'],
     ['\u001d0102000000001012\u001d21ABC', '0102000000001012\u001d21ABC'],
     ['https://id.gs1.org/01/02000000001012', 'https://id.gs1.org/01/02000000001012'],
+    ['https://counterfeitiq.vercel.app/product/2000000001012', '2000000001012'],
+    ['https://counterfeitiq.vercel.app/product/(01)02000000001012(21)DEMOSN0001', '(01)02000000001012(21)DEMOSN0001'],
+    ['https://counterfeitiq.vercel.app/product/%2801%2902000000001012%2821%29DEMOSN0001', '(01)02000000001012(21)DEMOSN0001'],
+    ['https://evil.example/product/2000000001012', 'https://evil.example/product/2000000001012'],
     ['javascript:alert(1)', null],
     ['data:text/html,hi', null],
     ['abc', null],
@@ -278,7 +282,7 @@ describe('demo codes', () => {
     const fetchMock = serve(found);
     renderAt('/scan');
     expect(screen.getByText('These use fictional companies and products.')).toBeInTheDocument();
-    await user.click(screen.getByRole('link', { name: 'Product barcode' }));
+    await user.click(screen.getByRole('link', { name: 'Product code' }));
     await screen.findByText('Demozol 500 mg Tablets');
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain('identifier=2000000001012');
   });

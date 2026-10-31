@@ -88,7 +88,7 @@ export async function resolveIdentifier(input: string, deps: ResolveDependencies
   });
 
   if (!parsed) {
-    return report({ outcome: 'INVALID_IDENTIFIER', explanation: 'This is not a readable product barcode. Try scanning again.' });
+    return report({ outcome: 'INVALID_IDENTIFIER', explanation: 'This is not a readable product code. Try scanning again.' });
   }
 
   const connector = connectorFor(deps.connectors, parsed.gtin);
@@ -103,7 +103,7 @@ export async function resolveIdentifier(input: string, deps: ResolveDependencies
   const product = await connector.getProduct(parsed.gtin);
   const sources = [product.provenance];
   if (product.status === 'NOT_FOUND') {
-    return report({ outcome: 'NOT_FOUND', sources, explanation: `The connected source has no product with this barcode. ${NOT_EVIDENCE}` });
+    return report({ outcome: 'NOT_FOUND', sources, explanation: `The connected source has no product with this code. ${NOT_EVIDENCE}` });
   }
   if (product.status !== 'FOUND' || !product.data) {
     return report({ outcome: 'SOURCE_UNAVAILABLE', sources, explanation: `The manufacturer source could not answer. ${NOT_EVIDENCE}` });
@@ -160,7 +160,7 @@ export async function resolveIdentifier(input: string, deps: ResolveDependencies
   return report({
     outcome: 'RESOLVED', product: product.data, batch, pack, registrationReference, scanSignal, warnings, sources,
     explanation: parsed.level === 'PRODUCT'
-      ? 'This barcode identifies a product, not one physical pack.'
+      ? 'This code identifies a product, not one physical pack.'
       : parsed.level === 'BATCH' ? 'This code identifies a product and batch, not one physical pack.'
         : 'This code carries a serial number for one pack.',
   });

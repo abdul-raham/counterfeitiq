@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { ImageUp, ScanBarcode, Search } from 'lucide-react';
+import { ImageUp, QrCode, Search } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { PageHeading } from '../../components/PageHeading';
@@ -27,7 +27,7 @@ export function ScanPage() {
     const identifier = cleanIdentifier(text);
     setCameraOpen(false);
     if (identifier) openProduct(identifier);
-    else setNotice('We could not use that code. Try again, or type the number under the barcode.');
+    else setNotice('We could not use that code. Try again, or type the code printed next to it.');
   }, [openProduct]);
 
   const handleUnavailable = useCallback(() => {
@@ -45,14 +45,14 @@ export function ScanPage() {
     setReading(false);
     const identifier = text && cleanIdentifier(text);
     if (identifier) openProduct(identifier);
-    else setNotice('We could not find a barcode in that photo. Try a sharper photo of just the barcode, or type the number.');
+    else setNotice('We could not find a QR code in that photo. Try a sharper photo of just the code, or type it.');
   }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     const identifier = cleanIdentifier(typed);
     if (!identifier) {
-      setInputError('Enter the number printed under the barcode.');
+      setInputError('Enter the code printed next to the QR code.');
       return;
     }
     setInputError(null);
@@ -62,7 +62,7 @@ export function ScanPage() {
   return (
     <div className="mx-auto max-w-xl px-4 py-8 sm:px-6 sm:py-12">
       <PageHeading title="Scan a product">
-        Scan the barcode or 2D code on the pack to see what its manufacturer has on record.
+        Scan the QR code on the pack to see what its manufacturer has on record.
       </PageHeading>
 
       {notice && <div className="mt-6"><StatusMessage tone="warn" title="That did not work" role="alert">{notice}</StatusMessage></div>}
@@ -79,13 +79,13 @@ export function ScanPage() {
                   setCameraOpen(true);
                 }}
               >
-                <ScanBarcode aria-hidden="true" className="size-5" />
+                <QrCode aria-hidden="true" className="size-5" />
                 Open camera
               </Button>
             )}
             <Button variant="secondary" disabled={reading} onClick={() => imageInput.current?.click()}>
               <ImageUp aria-hidden="true" className="size-5" />
-              {reading ? 'Reading the photo' : 'Choose a photo of the barcode'}
+              {reading ? 'Reading the photo' : 'Choose a photo of the QR code'}
             </Button>
             <input ref={imageInput} data-testid="barcode-image" type="file" accept="image/*" hidden onChange={(event) => void handleImage(event)} />
           </div>
@@ -96,7 +96,7 @@ export function ScanPage() {
       <form onSubmit={handleSubmit} noValidate className="mt-8 border-t border-line pt-6">
         <Input
           label="Or type the code"
-          hint="The number printed under the barcode."
+          hint="Printed next to the QR code."
           value={typed}
           error={inputError}
           autoComplete="off"
@@ -114,7 +114,7 @@ export function ScanPage() {
       <DemoCodes />
 
       <p className="mt-8 text-center text-sm text-muted">
-        No barcode?{' '}
+        No QR code?{' '}
         <Link to="/inspect" className="rounded-sm text-ink underline underline-offset-4">Inspect the packaging</Link>
         {' or '}
         <Link to="/lookup" className="rounded-sm text-ink underline underline-offset-4">look up a NAFDAC number</Link>.
