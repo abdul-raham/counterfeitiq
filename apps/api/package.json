@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "build": "wrangler deploy --dry-run",
+    "deploy": "wrangler deploy --secrets-file .env",
     "test": "vitest run",
     "smoke:greenbook": "vitest run --config vitest.smoke.config.ts",
     "typecheck": "tsc --noEmit",

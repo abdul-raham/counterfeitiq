@@ -102,10 +102,12 @@ Set these on the API Worker. The frontend and verification engine need no change
 
 ```sh
 # Demonstration mode (current)
-npx wrangler deploy --var REFERENCE_MODE:demo
+# in apps/api/.env set REFERENCE_MODE=demo, then:
+npm run deploy --workspace @counterfeitiq/api
 
 # Live mode: only after this document records NAFDAC's permission
-npx wrangler deploy --var REFERENCE_MODE:authorized_live --var "GREENBOOK_ACCESS_BASIS:<where it is recorded>"
+# in apps/api/.env set REFERENCE_MODE=authorized_live and GREENBOOK_ACCESS_BASIS=<where it is recorded>, then:
+npm run deploy --workspace @counterfeitiq/api
 ```
 
 The endpoint, 8 second timeout, cache lifetimes and request limits are constants at the top of `apps/api/src/adapters/greenbook.ts`, so they are changed in code rather than by configuration. Only the official origin is used.

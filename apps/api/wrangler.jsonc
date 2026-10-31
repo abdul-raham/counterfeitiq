@@ -9,12 +9,5 @@
     { "name": "ANALYZE_LIMITER", "namespace_id": "1001", "simple": { "limit": 20, "period": 60 } },
     { "name": "REFERENCE_LIMITER", "namespace_id": "1002", "simple": { "limit": 60, "period": 60 } },
     { "name": "GREENBOOK_LIMITER", "namespace_id": "1003", "simple": { "limit": 10, "period": 60 } }
-  ],
-  "vars": {
-    "ENVIRONMENT": "production",
-    "GEMMA_MODEL": "@cf/google/gemma-4-26b-a4b-it",
-    "REFERENCE_MODE": "authorized_live",
-    "GREENBOOK_ACCESS_BASIS": "public-endpoint-hackathon-evaluation-2026-10-31",
-    "ALLOWED_ORIGINS": "https://counterfeitiq.vercel.app,http://localhost:5173"
-  }
+  ]
 }

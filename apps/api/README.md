@@ -50,19 +50,21 @@ The model can invent text for a photo it cannot read. In testing it named a real
 
 ## Configuration
 
-There are no Worker secrets: the `AI` binding authenticates through the Cloudflare account. All values below are in `wrangler.jsonc`.
+There are no real secrets: the `AI` binding authenticates through the Cloudflare account. Worker settings still live outside the code, in `apps/api/.env`, which Git ignores. Copy [.env.example](.env.example) to `.env` and fill it in.
+
+`npm run deploy` uploads that file with `wrangler deploy --secrets-file .env`. A plain `wrangler deploy` keeps the values already uploaded, so a changed `.env` only takes effect through `npm run deploy`. Bindings and rate limits stay in `wrangler.jsonc`, because Cloudflare reads them only from there.
 
 | Name | Type | Value |
 |---|---|---|
 | `AI` | Binding | Workers AI |
 | `ANALYZE_LIMITER` | Binding | 20 per minute per client address |
 | `REFERENCE_LIMITER` | Binding | 60 per minute per client address |
-| `ENVIRONMENT` | Variable | `production` |
-| `GEMMA_MODEL` | Variable | `@cf/google/gemma-4-26b-a4b-it` |
-| `REFERENCE_MODE` | Variable | `demo` or `authorized_live` |
+| `ENVIRONMENT` | `.env` | `production` |
+| `GEMMA_MODEL` | `.env` | `@cf/google/gemma-4-26b-a4b-it` |
+| `REFERENCE_MODE` | `.env` | `demo` or `authorized_live` |
 | `GREENBOOK_LIMITER` | Binding | 10 Greenbook requests per minute |
-| `GREENBOOK_ACCESS_BASIS` | Variable | Why live requests are made; empty sends nothing |
-| `ALLOWED_ORIGINS` | Variable | Comma-separated exact origins; must include the production web origin |
+| `GREENBOOK_ACCESS_BASIS` | `.env` | Why live requests are made; empty sends nothing |
+| `ALLOWED_ORIGINS` | `.env` | Comma-separated exact origins; must include the production web origin |
 
 The web app needs `VITE_API_BASE_URL` set to the Worker URL.
 
@@ -73,7 +75,7 @@ Rate limits are approximate and counted per Cloudflare location, so a short burs
 ```bash
 npm test --workspace @counterfeitiq/api
 npm run dev --workspace @counterfeitiq/api
-cd apps/api && npx wrangler login && npx wrangler deploy
+cd apps/api && npx wrangler login && npm run deploy
 ```
 
 Tests need no quota. `wrangler dev` calls the real model, because the AI binding is remote.
