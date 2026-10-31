@@ -1,0 +1,29 @@
+{
+  "name": "@counterfeitiq/ai-service",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 8788",
+    "build": "wrangler deploy --dry-run",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "fixtures": "node scripts/make-fixtures.mjs",
+    "demo": "node scripts/demo.mjs"
+  },
+  "dependencies": {
+    "@counterfeitiq/shared": "*",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "latest",
+    "@eslint/js": "latest",
+    "eslint": "latest",
+    "sharp": "^0.34.0",
+    "typescript": "^6.0.0",
+    "typescript-eslint": "latest",
+    "vitest": "latest",
+    "wrangler": "latest"
+  }
+}
