@@ -44,7 +44,7 @@ export function SourceNotice({ reference }: { reference: ReferenceLookupResult |
     <p className="text-sm text-muted">
       Source: live NAFDAC Greenbook lookup
       {provenance.requestedAt && `, checked ${formatDate(provenance.requestedAt)}`}.
-      {' '}Experimental, low-volume lookup of NAFDAC's public Greenbook. Not endorsed by NAFDAC.
+      {' '}Experimental, and not endorsed by NAFDAC.
       {url && (
         <>
           {' '}

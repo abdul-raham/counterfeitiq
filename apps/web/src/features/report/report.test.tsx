@@ -83,7 +83,7 @@ describe('inactive registration', () => {
 describe('live source label', () => {
   it('says the lookup is experimental and not endorsed', () => {
     render(<Report imageUrl={null} response={analysis()} />);
-    expect(screen.getByText(/Experimental, low-volume lookup of NAFDAC's public Greenbook\. Not endorsed by NAFDAC\./)).toBeInTheDocument();
+    expect(screen.getByText(/Experimental, and not endorsed by NAFDAC\./)).toBeInTheDocument();
   });
 });
 
@@ -190,10 +190,35 @@ describe('Report', () => {
     expect(screen.queryByText('Demonstration record, not live NAFDAC data')).not.toBeInTheDocument();
   });
 
-  it('does not imply a record exists when none was checked', () => {
+  it('does not show a registration expiry when no record was checked', () => {
     render(<Report imageUrl={null} response={analysis({ reference: null, verification: { status: 'INSUFFICIENT_EVIDENCE' } })} />);
-    expect(screen.getByText('No record was checked')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Registration expiry' })).not.toBeInTheDocument();
     expect(screen.queryByText('From the registration record')).not.toBeInTheDocument();
+  });
+
+  it('shows the extra details from the record and the pack', () => {
+    render(<Report imageUrl={null} response={analysis({
+      extracted: { dosageForm: 'Tablet', packSize: '20 tablets', directions: 'One tablet daily', storage: 'Below 25 C', printedWarnings: ['Keep away from children'] },
+      reference: { status: 'FOUND', record: { ...record, applicant: 'Example Applicant Ltd', registrationStatus: 'Active', route: 'Oral', approvalDate: '2024-02-01' }, provenance: live },
+    })} />);
+    expect(screen.getByText('Example Applicant Ltd')).toBeInTheDocument();
+    expect(screen.getByText('Active')).toBeInTheDocument();
+    expect(screen.getByText('Oral')).toBeInTheDocument();
+    expect(screen.getByText('1 February 2024')).toBeInTheDocument();
+    expect(screen.getByText('One tablet daily')).toBeInTheDocument();
+    expect(screen.getByText('Below 25 C')).toBeInTheDocument();
+    expect(screen.getByText('Keep away from children')).toBeInTheDocument();
+  });
+
+  it('adds no warnings or empty rows to a clean live report', () => {
+    const { container } = render(<Report imageUrl={null} response={analysis({
+      extracted: { manufacturer: null },
+      reference: { status: 'FOUND', record: { ...record, manufacturer: null, strength: '500 mg', ingredients: [] }, provenance: live },
+    })} />);
+    expect(container.textContent).not.toMatch(/Not available|Can't compare/);
+    expect(screen.queryByRole('heading', { name: 'Manufacturer' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(container.textContent?.match(/does not prove/g)).toHaveLength(1);
   });
 
   it('lists differences with both values', () => {

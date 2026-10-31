@@ -17,6 +17,11 @@ const pack: ExtractedProduct = {
   batchNumber: 'EX2041',
   manufacturingDate: '2025-06',
   expiryDate: '2027-06',
+  dosageForm: 'Tablet',
+  packSize: '20 tablets',
+  directions: 'Adults: one tablet every eight hours after food.',
+  storage: 'Store below 25 C in a dry place.',
+  printedWarnings: ['Keep out of reach of children.', 'Do not exceed the stated dose.'],
 };
 
 const record: MedicineReference = {
@@ -27,6 +32,10 @@ const record: MedicineReference = {
   ingredients: ['Exampleol'],
   registrationExpiry: '2028-03-14',
   retrievedAt: RETRIEVED_AT,
+  applicant: 'Example Applicant Ltd',
+  registrationStatus: 'Active',
+  packSize: '2 x 10 tablets',
+  approvalDate: '2023-06-04',
 };
 
 const fixtureProvenance = {

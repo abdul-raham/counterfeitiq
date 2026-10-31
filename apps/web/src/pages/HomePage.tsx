@@ -78,7 +78,7 @@ export function HomePage() {
         <p className="mt-3 max-w-2xl leading-relaxed text-muted">
           A registration match does not prove a physical pack is genuine, because counterfeit packaging can copy real
           details. A missing record does not prove a product is fake. CounterfeitIQ shows you the evidence so you can
-          decide what to check next. Greenbook lookups are experimental and not endorsed by NAFDAC.
+          decide what to check next.
         </p>
       </section>
     </div>

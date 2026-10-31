@@ -23,6 +23,10 @@ function isNullableString(value: unknown): boolean {
   return typeof value === 'string' || value === null;
 }
 
+function isOptionalText(value: unknown): boolean {
+  return value === undefined || isNullableString(value);
+}
+
 function isStringArray(value: unknown): boolean {
   return Array.isArray(value) && value.every((item) => typeof item === 'string');
 }
@@ -40,7 +44,8 @@ function isMedicineRecord(value: unknown): boolean {
     && isNullableString(value.manufacturer)
     && isNullableString(value.strength)
     && isStringArray(value.ingredients)
-    && isNullableString(value.registrationExpiry);
+    && isNullableString(value.registrationExpiry)
+    && [value.applicant, value.packSize, value.registrationStatus, value.productCategory, value.dosageForm, value.route, value.approvalDate].every(isOptionalText);
 }
 
 // Provenance rules are checked at runtime because they are what stops a demo
@@ -79,6 +84,8 @@ export function isAnalysisResponse(value: unknown): value is AnalysisResponse {
 
   if (!isStringArray(extracted.ingredients)) return false;
   if (!EXTRACTED_TEXT_FIELDS.every((field) => isNullableString(extracted[field]))) return false;
+  if (![extracted.dosageForm, extracted.packSize, extracted.directions, extracted.storage].every(isOptionalText)) return false;
+  if (extracted.printedWarnings !== undefined && !isStringArray(extracted.printedWarnings)) return false;
   if (verification.physicalAuthenticityConfirmed !== false) return false;
   if (!VERIFICATION_STATUSES.includes(verification.status as string)) return false;
   if (!EXPIRY_STATUSES.includes(verification.packageExpiryStatus as string)) return false;
