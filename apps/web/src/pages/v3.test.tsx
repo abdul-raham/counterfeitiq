@@ -137,12 +137,12 @@ describe('scanning', () => {
 });
 
 describe('product result', () => {
-  it('shows product and manufacturer, and names a simulated source', async () => {
+  it('shows product and manufacturer, with no source line for a demo record', async () => {
     serve(found);
     const { container } = renderAt('/product/2000000001012');
     expect(await screen.findByText('Demozol 500 mg Tablets')).toBeInTheDocument();
     expect(screen.getByText('Fictional Labs Nigeria Ltd')).toBeInTheDocument();
-    expect(screen.getByText(/Source: Simulated manufacturer ERP/)).toBeInTheDocument();
+    expect(screen.queryByText(/Source:/)).not.toBeInTheDocument();
     expect(screen.getByText(found.explanation)).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Batch' })).not.toBeInTheDocument();
     const { violations } = await axe.run(container, { rules: { 'color-contrast': { enabled: false } } });
