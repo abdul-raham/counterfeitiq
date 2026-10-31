@@ -4,7 +4,7 @@ import axe from 'axe-core';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../App';
-import { analysis, foundFixture, foundLive, notFound, unavailable } from '../test/fixtures';
+import { analysis, fixture, foundFixture, foundLive, live, notExecuted, notFound, unavailable } from '../test/fixtures';
 
 function renderAt(path: string) {
   return render(<MemoryRouter initialEntries={[path]}><App /></MemoryRouter>);
@@ -200,6 +200,18 @@ describe('manual lookup', () => {
     expect(await screen.findByText('Registration records could not be checked')).toBeInTheDocument();
     expect(screen.queryByText('No registration record found')).not.toBeInTheDocument();
     expect(screen.getByText(/don't know whether A1-000000 is registered/)).toBeInTheDocument();
+  });
+
+  it.each([
+    ['LIVE_OFFICIAL', { ...live, authoritative: false }, /because the official NAFDAC source could not be reached/],
+    ['DEMO_FIXTURE', { ...fixture }, /because no matching demonstration record is available and no live lookup was performed/],
+    ['NOT_EXECUTED', notExecuted, /because no registration source was checked/],
+  ] as const)('words an unavailable lookup by what actually ran (%s)', async (_mode, provenance, text) => {
+    respondWith({ status: 'SOURCE_UNAVAILABLE', record: null, provenance });
+    renderAt('/lookup');
+    await lookUp('A1-123456');
+    expect(await screen.findByText(text)).toBeInTheDocument();
+    expect(screen.queryByText('Demonstration record found')).not.toBeInTheDocument();
   });
 
   it('offers a retry after a request failure', async () => {

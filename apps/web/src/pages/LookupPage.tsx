@@ -7,6 +7,7 @@ import { Input } from '../components/Input';
 import { PageHeading } from '../components/PageHeading';
 import { Skeleton } from '../components/Skeleton';
 import { StatusMessage } from '../components/StatusMessage';
+import { unavailableReason } from '../features/report/outcome';
 import { RecordDetails } from '../features/report/RecordDetails';
 import { SourceNotice } from '../features/report/SourceNotice';
 import { isSampleMode, lookupReference } from '../lib/api';
@@ -43,7 +44,7 @@ function LookupResult({ result, number }: { result: ReferenceLookupResult; numbe
   return (
     <div className="space-y-4">
       <StatusMessage tone="warn" title="Registration records could not be checked">
-        The source could not be reached, so we don't know whether {number} is registered. Try again later, or check the
+        We don't know whether {number} is registered, because {unavailableReason[result.provenance.mode]}. Try again later, or check the
         official NAFDAC source directly.
       </StatusMessage>
       <SourceNotice reference={result} />
