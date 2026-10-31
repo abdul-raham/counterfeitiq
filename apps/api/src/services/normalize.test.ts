@@ -112,7 +112,7 @@ describe('ingredients and categories', () => {
     expect(normalizeIngredient('Co-trimoxazole')).toBe(normalizeIngredient('Cotrimoxazole'));
   });
 
-  it.each(['vaccine', 'Herbal Medicine'])('treats %s as a medicine', (category) => {
+  it.each(['vaccine', 'Herbal Medicine', 'medical device'])('treats %s as a medicine', (category) => {
     expect(isMedicineCategory(category)).toBe(true);
   });
 

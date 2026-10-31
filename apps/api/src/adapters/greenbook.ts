@@ -6,6 +6,7 @@ export const GREENBOOK_URL = 'https://greenbook.nafdac.gov.ng/';
 
 const USER_AGENT = 'CounterfeitIQ/0.1 (+https://github.com/abdul-raham/counterfeitiq)';
 const TIMEOUT_MS = 8_000;
+const DETAIL_TIMEOUT_MS = 4_000;
 // The site's own table asks for 10 rows, and it is the size that has been verified.
 const PAGE_LENGTH = 10;
 
@@ -70,6 +71,8 @@ const isolateState = createGreenbookState();
 
 export interface GreenbookOptions {
   fetch?: typeof fetch;
+  /** Also read the product page after an exact match, for details the search omits. */
+  readProductPage?: boolean;
   limiter?: RateLimiter;
   now?: () => Date;
   state?: GreenbookState;
@@ -120,7 +123,9 @@ function decodeEntities(value: string): string {
 
 function cleanText(value: unknown): string | null {
   if (typeof value !== 'string') return null;
-  return decodeEntities(value).replace(/\s+/g, ' ').trim() || null;
+  const text = decodeEntities(value).replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+  // The Greenbook stores missing values as the text "NA", which must not be compared.
+  return text && !/^(?:n\/?a|nil|none)$/i.test(text) ? text : null;
 }
 
 function nestedText(row: Record<string, unknown>, key: string, field: string): string | null {
@@ -148,6 +153,16 @@ function parseSearchPage(raw: unknown): SearchPage | null {
   return { rows: data, recordsFiltered: filtered };
 }
 
+function present<K extends keyof MedicineReference>(key: K, value: string | null): Partial<MedicineReference> {
+  return value ? { [key]: value } : {};
+}
+
+/** Reads one labelled value from the product page, which has no structured form. */
+function detailField(html: string, label: string): string | null {
+  const match = new RegExp(`${label}\\s*</h1>\\s*<p[^>]*>([\\s\\S]*?)</p>`, 'i').exec(html);
+  return match?.[1] ? cleanText(match[1].replace(/<[^>]+>/g, ' ')) : null;
+}
+
 function toMedicineReference(row: Record<string, unknown>, retrievedAt: string): MedicineReference | null {
   const productName = cleanText(row.product_name)?.replace(/[#*]/g, '').trim();
   const nafdacNumber = cleanText(row.NAFDAC);
@@ -171,6 +186,8 @@ function toMedicineReference(row: Record<string, unknown>, retrievedAt: string):
     dosageForm: nestedText(row, 'form', 'name'),
     route: nestedText(row, 'route', 'name'),
     approvalDate: cleanText(row.approval_date),
+    ...present('composition', cleanText(row.composition)),
+    ...present('atcCode', cleanText(row.atc)),
   };
 }
 
@@ -249,6 +266,35 @@ export function createGreenbookAdapter(options: GreenbookOptions = {}): Referenc
   const now = options.now ?? (() => new Date());
   const send = options.fetch ?? ((input, init) => fetch(input, init));
 
+  // Extra detail only: any failure leaves the verified result exactly as it was.
+  async function withProductPage(result: ReferenceLookupResult, productId: unknown): Promise<ReferenceLookupResult> {
+    if (!options.readProductPage || result.status !== 'FOUND' || !Number.isInteger(productId)) return result;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), DETAIL_TIMEOUT_MS);
+    try {
+      const response = await send(`${GREENBOOK_URL}products/details/${productId as number}`, {
+        headers: { Accept: 'text/html', 'User-Agent': USER_AGENT },
+        redirect: 'manual',
+        signal: controller.signal,
+      });
+      if (response.status !== 200 || !response.headers.get('Content-Type')?.toLowerCase().includes('html')) return result;
+      const html = await response.text();
+      return {
+        ...result,
+        record: {
+          ...result.record,
+          ...present('listedManufacturer', detailField(html, 'Manufacturer Name')),
+          ...present('manufacturerCountry', detailField(html, 'Manufacturer Country')),
+          ...present('marketingCategory', detailField(html, 'Marketing Category')),
+        },
+      };
+    } catch {
+      return result;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   async function search(query: string, key: string): Promise<ReferenceLookupResult> {
     const started = now();
     const requestedAt = started.toISOString();
@@ -285,7 +331,9 @@ export function createGreenbookAdapter(options: GreenbookOptions = {}): Referenc
 
     const page = parseSearchPage(raw);
     if (!page) return unavailable(requestedAt, NOTES.malformed);
-    const result = interpretPage(page, key, requestedAt);
+    const interpreted = interpretPage(page, key, requestedAt);
+    const match = page.rows.find((row) => canonicalNafdacNumber(cleanText(row.NAFDAC) ?? '') === key);
+    const result = await withProductPage(interpreted, match?.product_id);
     remember(state, key, result, started.getTime());
     return result;
   }

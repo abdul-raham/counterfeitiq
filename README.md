@@ -59,7 +59,7 @@ Tests mock Gemma and the Greenbook, and do not contact NAFDAC.
 
 ## Known limitations
 
-- The Greenbook lists an applicant, not always the manufacturer, so the manufacturer is not compared on live records.
+- The manufacturer from the Greenbook is shown but not yet compared with the pack.
 - Greenbook coverage is focused on medicines. Other products are read, but no registration check is claimed.
 - A pack may word a product name differently from its record, which can show as a difference to check rather than proof of a problem.
 - The model can misread a photo. The report shows what it read so people can check it against the pack.

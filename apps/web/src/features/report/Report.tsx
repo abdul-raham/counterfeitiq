@@ -54,7 +54,7 @@ export function Report({ response, imageUrl }: { response: AnalysisResponse; ima
   const category = extracted.category && extracted.category.charAt(0).toUpperCase() + extracted.category.slice(1);
   const printedWarnings = extracted.printedWarnings ?? [];
   const hasPrintedDetails = Boolean(extracted.dosageForm || extracted.packSize || extracted.directions || extracted.storage || printedWarnings.length);
-  const hasRecordDetails = Boolean(record && (record.applicant || record.packSize || record.registrationStatus || record.productCategory || record.dosageForm || record.route || record.approvalDate));
+  const hasRecordDetails = Boolean(record && (record.applicant || record.listedManufacturer || record.composition || record.atcCode || record.packSize || record.registrationStatus || record.productCategory || record.dosageForm || record.route || record.approvalDate));
 
   return (
     <div>
@@ -148,12 +148,17 @@ export function Report({ response, imageUrl }: { response: AnalysisResponse; ima
             <ReportSection title={`On the ${recordName}`}>
               <dl className="grid grid-cols-1 gap-3 rounded-lg border border-line bg-surface p-4 text-sm sm:grid-cols-2">
                 <Detail label="Applicant" value={record.applicant} />
+                <Detail label="Manufacturer" value={record.listedManufacturer} />
+                <Detail label="Manufacturer country" value={record.manufacturerCountry} />
+                <Detail label="Composition" value={record.composition} />
+                <Detail label="ATC code" value={record.atcCode} />
+                <Detail label="Marketing category" value={record.marketingCategory} />
                 <Detail label="Status" value={record.registrationStatus} />
                 <Detail label="Pack size" value={record.packSize} />
                 <Detail label="Category" value={record.productCategory} />
                 <Detail label="Form" value={record.dosageForm} />
                 <Detail label="Route" value={record.route} />
-                <Detail label="Approved" value={formatDate(record.approvalDate ?? null)} />
+                <Detail label="Date registered" value={formatDate(record.approvalDate ?? null)} />
               </dl>
             </ReportSection>
           )}

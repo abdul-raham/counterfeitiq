@@ -351,6 +351,60 @@ describe('lookups that must not run', () => {
   });
 });
 
+describe('Greenbook record details', () => {
+  const row = { ...A6_100103, strength: 'NA', atc: 'J07BC01', composition: 'HBsAg 10 mcg', product_id: 7078 };
+  const pageHtml = '<h1 class="x">Manufacturer Name\n</h1>\n<p class="m-2">\n Example Maker Ltd\n</p><h1>Manufacturer Country</h1><p>NIGERIA &nbsp;</p><h1>Marketing Category</h1><p>NA &nbsp;</p>';
+
+  function adapter(productPage: () => Promise<Response>, readProductPage = true) {
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (url) => (
+      String(url).includes('/products/details/') ? productPage() : jsonResponse(page([row]))
+    ));
+    return { fetchMock, adapter: createGreenbookAdapter({ fetch: fetchMock, readProductPage, state: createGreenbookState() }) };
+  }
+
+  it('treats the text NA as missing, so it is never compared', async () => {
+    const { adapter: greenbook } = adapter(async () => new Response('', { status: 404 }));
+    const result = await greenbook.lookupMedicine('A6-100103');
+    expect(result.record?.strength).toBeNull();
+    expect(result.record?.composition).toBe('HBsAg 10 mcg');
+    expect(result.record?.atcCode).toBe('J07BC01');
+  });
+
+  it('adds the manufacturer from the product page without using it for comparison', async () => {
+    const { adapter: greenbook, fetchMock } = adapter(async () => new Response(pageHtml, { headers: { 'Content-Type': 'text/html' } }));
+    const result = await greenbook.lookupMedicine('A6-100103');
+    expect(result.status).toBe('FOUND');
+    expect(result.record).toMatchObject({ manufacturer: null, listedManufacturer: 'Example Maker Ltd', manufacturerCountry: 'NIGERIA' });
+    expect(result.record?.marketingCategory).toBeUndefined();
+    expect(String(fetchMock.mock.calls[1]?.[0])).toContain('/products/details/7078');
+  });
+
+  it.each([
+    ['a server error', async () => new Response('oops', { status: 500 })],
+    ['a network failure', async () => { throw new TypeError('network'); }],
+    ['an unexpected page', async () => new Response('{}', { headers: { 'Content-Type': 'application/json' } })],
+  ])('keeps the verified result when the product page gives %s', async (_name, productPage) => {
+    const { adapter: greenbook } = adapter(productPage as () => Promise<Response>);
+    const result = await greenbook.lookupMedicine('A6-100103');
+    expect(result.status).toBe('FOUND');
+    expect(result.provenance).toMatchObject({ mode: 'LIVE_OFFICIAL', authoritative: true });
+    expect(result.record?.listedManufacturer).toBeUndefined();
+  });
+
+  it('does not read the product page unless asked', async () => {
+    const { adapter: greenbook, fetchMock } = adapter(async () => new Response(pageHtml), false);
+    await greenbook.lookupMedicine('A6-100103');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not read a product page for a miss', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation(async () => jsonResponse(page([])));
+    const greenbook = createGreenbookAdapter({ fetch: fetchMock, readProductPage: true, state: createGreenbookState() });
+    await greenbook.lookupMedicine('A6-100103');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('provider selection', () => {
   it('defaults to fixtures and contacts nobody', async () => {
     const fetchMock = vi.fn<typeof fetch>();

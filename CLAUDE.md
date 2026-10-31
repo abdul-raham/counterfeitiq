@@ -8,7 +8,7 @@ CounterfeitIQ reads a product photo and compares what it finds with the NAFDAC G
 - A failed, blocked or timed-out lookup is `SOURCE_UNAVAILABLE`, never `NOT_FOUND`. Only a complete live answer can be `NOT_FOUND`.
 - Greenbook matches must be exact on the normalized registration number. Never take the first result.
 - Fixture data must stay labelled `DEMO_FIXTURE`. A fixture miss is never `NOT_FOUND`, and real registration numbers do not belong in the fixtures.
-- Greenbook gives an applicant, not a manufacturer. Keep `manufacturer` as `null` on live records.
+- Keep `manufacturer` as `null` on live records so it is not compared. The product page's manufacturer goes in `listedManufacturer`, for display only.
 - NAFDAC has not authorized this project. Never call the live lookup authorized, official or endorsed, despite the name `authorized_live`.
 - Never bypass a CAPTCHA, login or block. Never commit cookies, tokens or `.dev.vars`.
 - Do not put debug fields from Greenbook responses in public examples or logs.

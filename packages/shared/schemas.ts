@@ -55,6 +55,12 @@ export interface MedicineReference {
   registrationExpiry: string | null;
   retrievedAt: string;
   applicant?: string | null;
+  /** Shown to the reader. Not compared with the pack, unlike manufacturer. */
+  listedManufacturer?: string | null;
+  manufacturerCountry?: string | null;
+  composition?: string | null;
+  atcCode?: string | null;
+  marketingCategory?: string | null;
   packSize?: string | null;
   registrationStatus?: string | null;
   productCategory?: string | null;
@@ -155,6 +161,8 @@ export function isMedicineCategory(category: string | null): boolean {
     'vaccine',
     'vaccines',
     'herbal medicine',
+    'medical device',
+    'medical devices',
   ]).has(category.trim().toLowerCase());
 }
 
