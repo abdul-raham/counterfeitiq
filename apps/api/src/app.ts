@@ -1,4 +1,5 @@
-import { lookupMedicine } from './adapters/reference';
+import type { RateLimiter } from './adapters/greenbook';
+import { createReferenceAdapter } from './adapters/reference';
 import { extractProduct, type VisionModel } from './ai/extraction';
 import { analyzeRequest, type AnalyzeDependencies } from './routes/analyze';
 import { apiErrorResponse } from './routes/errors';
@@ -12,7 +13,9 @@ export interface Env {
   ENVIRONMENT?: string;
   AI?: VisionModel;
   GEMMA_MODEL?: string;
-  REFERENCE_MODE?: 'demo' | 'authorized_live';
+  REFERENCE_MODE?: string;
+  GREENBOOK_ACCESS_BASIS?: string;
+  GREENBOOK_LIMITER?: RateLimiter;
   ALLOWED_ORIGINS?: string;
   ANALYZE_LIMITER?: RequestLimiter;
   REFERENCE_LIMITER?: RequestLimiter;
@@ -44,16 +47,19 @@ export function withCors(response: Response, cors: Record<string, string>): Resp
 }
 
 export function createDependencies(env: Env = {}): AnalyzeDependencies {
+  const referenceAdapter = createReferenceAdapter({
+    mode: env.REFERENCE_MODE,
+    greenbookAccessBasis: env.GREENBOOK_ACCESS_BASIS,
+    greenbook: { limiter: env.GREENBOOK_LIMITER },
+  });
+
   return {
     extractProduct: (image: Blob) =>
       extractProduct(image, {
         ai: env.AI,
         model: env.GEMMA_MODEL,
       }),
-    lookupMedicine: (number: string) =>
-      lookupMedicine(number, {
-        mode: env.REFERENCE_MODE ?? 'demo',
-      }),
+    lookupMedicine: (number: string) => referenceAdapter.lookupMedicine(number),
   };
 }
 

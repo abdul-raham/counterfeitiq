@@ -7,7 +7,7 @@ import { ReportSection } from '../../components/ReportSection';
 import { StatusMessage } from '../../components/StatusMessage';
 import { formatDate } from '../../lib/format';
 import { SourceNotice } from './SourceNotice';
-import { buildComparisonRows, describeOutcome, nothingWasRead, unreadFields } from './outcome';
+import { buildComparisonRows, describeOutcome, nothingWasRead, registrationWarning, unreadFields } from './outcome';
 
 type ExpiryStatus = InvestigationReport['packageExpiryStatus'];
 
@@ -44,6 +44,7 @@ export function Report({ response, imageUrl }: { response: AnalysisResponse; ima
   const tone = toneStyles[outcome.tone];
   const record = reference?.status === 'FOUND' ? reference.record : null;
   const recordName = record && reference?.provenance.mode === 'DEMO_FIXTURE' ? 'demonstration record' : 'registration record';
+  const warning = registrationWarning(reference);
   const rows = buildComparisonRows(response);
   const differences = verification.findings.filter((finding) => finding.status === 'MISMATCH');
   const uncertain = verification.findings.filter((finding) => finding.status === 'UNKNOWN');
@@ -70,6 +71,14 @@ export function Report({ response, imageUrl }: { response: AnalysisResponse; ima
         <div className="mt-3">
           <StatusMessage tone="risk" title="The expiry date printed on this pack has passed">
             This is separate from the registration result above.
+          </StatusMessage>
+        </div>
+      )}
+
+      {warning && (
+        <div className="mt-3">
+          <StatusMessage tone="risk" title={warning}>
+            Check the current registration status with NAFDAC before using this product.
           </StatusMessage>
         </div>
       )}

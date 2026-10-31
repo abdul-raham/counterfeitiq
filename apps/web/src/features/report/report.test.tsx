@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { formatDate } from '../../lib/format';
-import { analysis, fixture, foundFixture, live, notExecuted, notFound, unavailable } from '../../test/fixtures';
+import { analysis, fixture, foundFixture, live, notExecuted, notFound, record, unavailable } from '../../test/fixtures';
 import { Report } from './Report';
 import { buildComparisonRows, describeOutcome } from './outcome';
 
@@ -66,6 +66,24 @@ describe('lapsed registration', () => {
     expect(describeOutcome(response).tone).toBe('warn');
     render(<Report imageUrl={null} response={response} />);
     expect(screen.getByText('The expiry date on the registration record has passed')).toBeInTheDocument();
+  });
+});
+
+describe('inactive registration', () => {
+  const inactive = { status: 'FOUND' as const, record, provenance: { ...live, note: 'The NAFDAC Greenbook does not list this registration as active.' } };
+
+  it('is never green and is warned about prominently', () => {
+    const response = analysis({ reference: inactive });
+    expect(describeOutcome(response).tone).toBe('warn');
+    render(<Report imageUrl={null} response={response} />);
+    expect(screen.getByText('The NAFDAC Greenbook does not list this registration as active.')).toBeInTheDocument();
+  });
+});
+
+describe('live source label', () => {
+  it('says the lookup is experimental and not endorsed', () => {
+    render(<Report imageUrl={null} response={analysis()} />);
+    expect(screen.getByText(/Experimental, low-volume lookup of NAFDAC's public Greenbook\. Not endorsed by NAFDAC\./)).toBeInTheDocument();
   });
 });
 

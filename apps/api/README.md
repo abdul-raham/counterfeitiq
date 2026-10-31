@@ -42,7 +42,7 @@ Those times include upload. The 4 MiB case came within 7 s of the timeout on a h
 - Model reply that is not exactly the contract JSON: `SERVICE_UNAVAILABLE`, `retryable: true`. Only the reason is logged, never the reply.
 - `REFERENCE_MODE=demo`: fictional fixtures only, labelled `DEMO_FIXTURE` and `authoritative: false`.
 - Fixture miss: `SOURCE_UNAVAILABLE`, never `NOT_FOUND`. `NOT_FOUND` is reserved for a real live lookup.
-- `REFERENCE_MODE=authorized_live`: `SOURCE_UNAVAILABLE` with `NOT_EXECUTED`. No live adapter ships here, and none should until NAFDAC authorizes automated access. A permissive `robots.txt` is not that authorization.
+- `REFERENCE_MODE=authorized_live` with `GREENBOOK_ACCESS_BASIS` set: experimental, low-volume lookups against NAFDAC's public Greenbook, not endorsed by NAFDAC. See [docs/greenbook-access.md](../../docs/greenbook-access.md). Without the basis, nothing is sent. Failures return `SOURCE_UNAVAILABLE`, never fixtures.
 
 Registration numbers match exactly: letter case, a label and dash style are ignored, but hyphen position counts, so `A11-23456` is not `A1-123456`.
 
@@ -60,6 +60,8 @@ There are no Worker secrets: the `AI` binding authenticates through the Cloudfla
 | `ENVIRONMENT` | Variable | `production` |
 | `GEMMA_MODEL` | Variable | `@cf/google/gemma-4-26b-a4b-it` |
 | `REFERENCE_MODE` | Variable | `demo` or `authorized_live` |
+| `GREENBOOK_LIMITER` | Binding | 10 Greenbook requests per minute |
+| `GREENBOOK_ACCESS_BASIS` | Variable | Why live requests are made; empty sends nothing |
 | `ALLOWED_ORIGINS` | Variable | Comma-separated exact origins; must include the production web origin |
 
 The web app needs `VITE_API_BASE_URL` set to the Worker URL.

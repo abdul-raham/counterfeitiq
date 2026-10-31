@@ -1,26 +1,32 @@
 import { Camera, Hash } from 'lucide-react';
 import { ButtonLink } from '../components/Button';
-import { EvidenceRow } from '../components/EvidenceRow';
 import { useDocumentTitle } from '../lib/useDocumentTitle';
 
 const steps = [
   { title: 'Photograph the pack', body: 'Or type in the NAFDAC number if you already have it.' },
-  { title: 'We read the details', body: 'An open-weight AI model reads what is printed. For medicines, we look for a registration record.' },
+  { title: 'We read the details', body: "An open-weight AI model reads what is printed. For medicines, we look up the number in NAFDAC's public Greenbook." },
   { title: 'See what lines up', body: 'You get a plain report of what matches, what differs and what is still unknown.' },
 ];
 
-function ExampleReport() {
+const reportContents = [
+  { title: 'Pack compared with the record', body: 'Product name, NAFDAC number, strength and ingredients, side by side.' },
+  { title: 'Two separate expiry dates', body: 'The date printed on the pack, and the date on the registration record.' },
+  { title: 'Where the result came from', body: 'The source used and when it was checked, or why it could not be checked.' },
+  { title: 'What to do next', body: 'Plain next steps, including what is still unknown.' },
+];
+
+function ReportContents() {
   return (
-    <section aria-labelledby="example-report" className="overflow-hidden rounded-lg border border-line bg-surface shadow-[0_24px_60px_-32px_rgb(23_42_64/28%)]">
-      <div className="border-b border-line px-4 py-3">
-        <h2 id="example-report" className="text-xs font-medium text-muted">Example report, fictional product</h2>
-        <p className="mt-1 text-lg font-semibold tracking-tight text-risk">Some details differ from the registration record</p>
-      </div>
-      <div className="divide-y divide-line">
-        <EvidenceRow label="Product name" packValue="Example Medicine" recordValue="Example Medicine" showRecord status="MATCH" />
-        <EvidenceRow label="Strength" packValue="250 mg" recordValue="500 mg" showRecord status="MISMATCH" />
-        <EvidenceRow label="Manufacturer" packValue={null} recordValue="Example Pharma Ltd" showRecord status="UNKNOWN" />
-      </div>
+    <section aria-labelledby="report-contents" className="overflow-hidden rounded-lg border border-line bg-surface shadow-[0_24px_60px_-32px_rgb(23_42_64/28%)]">
+      <h2 id="report-contents" className="border-b border-line px-4 py-3 text-lg font-semibold tracking-tight">What your report shows</h2>
+      <ul className="divide-y divide-line">
+        {reportContents.map((item) => (
+          <li key={item.title} className="px-4 py-3.5">
+            <p className="font-medium">{item.title}</p>
+            <p className="mt-0.5 text-sm leading-relaxed text-muted">{item.body}</p>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
@@ -49,7 +55,7 @@ export function HomePage() {
             </ButtonLink>
           </div>
         </div>
-        <ExampleReport />
+        <ReportContents />
       </div>
 
       <section aria-labelledby="how-it-works" className="border-t border-line py-12">
@@ -72,7 +78,7 @@ export function HomePage() {
         <p className="mt-3 max-w-2xl leading-relaxed text-muted">
           A registration match does not prove a physical pack is genuine, because counterfeit packaging can copy real
           details. A missing record does not prove a product is fake. CounterfeitIQ shows you the evidence so you can
-          decide what to check next.
+          decide what to check next. Greenbook lookups are experimental and not endorsed by NAFDAC.
         </p>
       </section>
     </div>

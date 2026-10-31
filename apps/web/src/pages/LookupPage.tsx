@@ -7,7 +7,7 @@ import { Input } from '../components/Input';
 import { PageHeading } from '../components/PageHeading';
 import { Skeleton } from '../components/Skeleton';
 import { StatusMessage } from '../components/StatusMessage';
-import { unavailableReason } from '../features/report/outcome';
+import { registrationWarning, unavailableReason } from '../features/report/outcome';
 import { RecordDetails } from '../features/report/RecordDetails';
 import { SourceNotice } from '../features/report/SourceNotice';
 import { isSampleMode, lookupReference } from '../lib/api';
@@ -18,11 +18,13 @@ const LOOKUP_CAVEAT = 'This confirms a record exists. It does not verify any phy
 function LookupResult({ result, number }: { result: ReferenceLookupResult; number: string }) {
   if (result.status === 'FOUND') {
     const demo = result.provenance.mode === 'DEMO_FIXTURE';
+    const warning = registrationWarning(result);
     return (
       <div className="space-y-4">
-        <StatusMessage tone={demo ? 'warn' : 'ok'} title={demo ? 'Demonstration record found' : 'Registration record found'}>
+        <StatusMessage tone={demo || warning ? 'warn' : 'ok'} title={demo ? 'Demonstration record found' : 'Registration record found'}>
           {LOOKUP_CAVEAT}
         </StatusMessage>
+        {warning && <StatusMessage tone="risk" title={warning}>Check the current registration status with NAFDAC before using this product.</StatusMessage>}
         <RecordDetails record={result.record} />
         <SourceNotice reference={result} />
       </div>
