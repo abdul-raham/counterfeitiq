@@ -60,6 +60,18 @@ function compareIngredients(packaging: string[], reference: string[]): Verificat
     };
   }
   const matches = packagingValues.join('|') === referenceValues.join('|');
+  const packagingSet = new Set(packagingValues);
+  const referenceSet = new Set(referenceValues);
+  const overlap = packagingValues.some((ingredient) => referenceSet.has(ingredient));
+  const oneListContainsTheOther = packagingValues.every((ingredient) => referenceSet.has(ingredient))
+    || referenceValues.every((ingredient) => packagingSet.has(ingredient));
+  if (!matches && overlap && oneListContainsTheOther) {
+    return {
+      code: 'INGREDIENTS_UNKNOWN', field: 'ingredients', status: 'UNKNOWN', severity: 'INFO',
+      packagingValue: packaging.join(', '), referenceValue: reference.join(', '),
+      explanation: 'The ingredient lists overlap, but one list may be incomplete, so a mismatch was not concluded.',
+    };
+  }
   return {
     code: `INGREDIENTS_${matches ? 'MATCH' : 'MISMATCH'}`,
     field: 'ingredients', status: matches ? 'MATCH' : 'MISMATCH',
