@@ -158,7 +158,7 @@ export function Report({ response, imageUrl }: { response: AnalysisResponse; ima
                 <Detail label="Category" value={record.productCategory} />
                 <Detail label="Form" value={record.dosageForm} />
                 <Detail label="Route" value={record.route} />
-                <Detail label="Approved" value={formatDate(record.approvalDate ?? null)} />
+                <Detail label="Date registered" value={formatDate(record.approvalDate ?? null)} />
               </dl>
             </ReportSection>
           )}

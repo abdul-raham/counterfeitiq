@@ -29,7 +29,7 @@ export function RecordDetails({ record }: { record: MedicineReference }) {
       <Row label="Pack size" value={record.packSize} />
       <Row label="Strength" value={record.strength} />
       <Row label="Ingredients" value={record.ingredients.length > 0 ? record.ingredients.join(', ') : null} />
-      <Row label="Approved" value={formatDate(record.approvalDate ?? null)} />
+      <Row label="Date registered" value={formatDate(record.approvalDate ?? null)} />
       <Row label="Registration expiry" value={formatDate(record.registrationExpiry)} />
     </dl>
   );
