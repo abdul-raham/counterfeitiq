@@ -1,4 +1,4 @@
-import type { AnalysisResponse, ExtractedProduct, FieldMatch, LookupMode, MedicineReference } from '@counterfeitiq/shared';
+import type { AnalysisResponse, ExtractedProduct, FieldMatch, LookupMode, MedicineReference, ReferenceLookupResult } from '@counterfeitiq/shared';
 import type { Tone } from '../../components/StatusMessage';
 
 export interface Outcome {
@@ -15,6 +15,14 @@ export const unavailableReason: Record<LookupMode, string> = {
   NOT_EXECUTED: 'no registration source was checked',
 };
 
+// The contract has no registration status, so the live adapter reports an inactive
+// registration as a note on an otherwise found record.
+export function registrationWarning(reference: ReferenceLookupResult | null): string | null {
+  return reference?.status === 'FOUND' && reference.provenance.mode === 'LIVE_OFFICIAL'
+    ? reference.provenance.note ?? null
+    : null;
+}
+
 export function nothingWasRead(extracted: ExtractedProduct): boolean {
   return !extracted.productName && !extracted.brand && !extracted.nafdacNumber
     && !extracted.manufacturer && !extracted.strength && extracted.ingredients.length === 0
@@ -30,7 +38,7 @@ export function describeOutcome({ extracted, reference, verification }: Analysis
     case 'REGISTRATION_DETAILS_MATCH':
       // Never green over an expired date: the match is not the news the reader needs.
       return outcome(
-        verification.packageExpiryStatus === 'EXPIRED' || verification.registrationExpiryStatus === 'EXPIRED' ? 'warn' : 'ok',
+        verification.packageExpiryStatus === 'EXPIRED' || verification.registrationExpiryStatus === 'EXPIRED' || registrationWarning(reference) ? 'warn' : 'ok',
         demo ? 'Details match a demonstration record' : 'Registration details match',
         "This does not prove this pack is genuine. Counterfeit packaging can copy a real product's details.",
       );

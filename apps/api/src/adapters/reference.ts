@@ -1,12 +1,11 @@
 import type { MedicineReference, ReferenceLookupResult } from '@counterfeitiq/shared';
-import { normalizeNafdacNumber } from '../services/normalize';
-import { INVALID_NUMBER_NOTE, notExecuted, type ReferenceAdapter } from './contract';
+import { canonicalNafdacNumber, INVALID_NUMBER_NOTE, notExecuted, type ReferenceAdapter } from './contract';
 import { createGreenbookAdapter, type GreenbookOptions } from './greenbook';
 
 // Fictional records only. A real registration number must never appear here,
 // because its details would be invented and could be mistaken for official data.
-const DEMO_FIXTURES: Record<string, MedicineReference> = {
-  A1123456: {
+const DEMO_FIXTURES = new Map<string, MedicineReference>([
+  ['A1-123456', {
     productName: 'Example Medicine',
     nafdacNumber: 'A1-123456',
     manufacturer: 'Example Pharma Ltd',
@@ -14,16 +13,17 @@ const DEMO_FIXTURES: Record<string, MedicineReference> = {
     ingredients: ['Exampleol'],
     registrationExpiry: '2028-03-14',
     retrievedAt: '2026-10-31T00:00:00.000Z',
-  },
-};
+  }],
+]);
 
+export { canonicalNafdacNumber } from './contract';
 export type { ReferenceAdapter } from './contract';
 
 export interface ReferenceOptions {
   /** REFERENCE_MODE: "demo" (the default) or "authorized_live". */
   mode?: string;
-  /** Where NAFDAC's permission is recorded. Greenbook requests stay off without it. */
-  greenbookAccessApproval?: string;
+  /** Why live requests are being made. Greenbook requests stay off without it. */
+  greenbookAccessBasis?: string;
   greenbook?: GreenbookOptions;
   now?: () => Date;
 }
@@ -31,11 +31,11 @@ export interface ReferenceOptions {
 function createFixtureAdapter(now: () => Date): ReferenceAdapter {
   return {
     async lookupMedicine(nafdacNumber: string): Promise<ReferenceLookupResult> {
-      const normalized = normalizeNafdacNumber(nafdacNumber);
+      const normalized = canonicalNafdacNumber(nafdacNumber);
       if (!normalized) return notExecuted(INVALID_NUMBER_NOTE);
 
       const requestedAt = now().toISOString();
-      const fixture = DEMO_FIXTURES[normalized];
+      const fixture = DEMO_FIXTURES.get(normalized);
       if (fixture) {
         return {
           status: 'FOUND',
@@ -75,8 +75,12 @@ export function createReferenceAdapter(options: ReferenceOptions = {}): Referenc
   if (mode === 'demo') return createFixtureAdapter(options.now ?? (() => new Date()));
   // Anything else fails closed: a typo must not quietly serve demo data.
   if (mode !== 'authorized_live') return refusingAdapter('The registration source is not configured.');
-  if (!options.greenbookAccessApproval?.trim()) {
+  if (!options.greenbookAccessBasis?.trim()) {
     return refusingAdapter('Live NAFDAC lookup is not enabled.');
   }
   return createGreenbookAdapter(options.greenbook);
+}
+
+export function lookupMedicine(nafdacNumber: string, options: ReferenceOptions = {}): Promise<ReferenceLookupResult> {
+  return createReferenceAdapter(options).lookupMedicine(nafdacNumber);
 }

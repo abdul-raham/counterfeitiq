@@ -1,8 +1,8 @@
 # NAFDAC Greenbook access
 
-**Status on 2026-10-31: permission not established. The application stays in demonstration mode and must not be described as live NAFDAC verification.**
+**Status on 2026-10-31: NAFDAC has not authorized or endorsed CounterfeitIQ. For today's hackathon evaluation, the project owner chose to run experimental, low-volume, user-triggered lookups against the public Greenbook endpoint. Do not describe this as authorized or official. After the hackathon, contact NAFDAC before any permanent use, and switch `REFERENCE_MODE` back to `demo` if access is refused.**
 
-The live adapter is built and tested against mocked responses, but it makes no requests until NAFDAC's permission is recorded in `GREENBOOK_ACCESS_APPROVAL`.
+Live requests need `REFERENCE_MODE=authorized_live` and `GREENBOOK_ACCESS_BASIS`, which records the actual basis for them, not an approval. No CAPTCHA, login or block is bypassed, and any block stops the lookup.
 
 ## Evidence
 
@@ -26,7 +26,7 @@ Automated access is not prohibited anywhere we looked, but nothing confirms it i
 
 1. Send the request below to `nafdac@nafdac.gov.ng`, the address NAFDAC publishes for information requests.
 2. Add the reply, or the terms it points to, to the table above.
-3. Set `GREENBOOK_ACCESS_APPROVAL` to where the permission is recorded, then follow [Switching mode](#switching-mode).
+3. Set `GREENBOOK_ACCESS_BASIS` to where the permission is recorded, then follow [Switching mode](#switching-mode).
 
 ### Draft request
 
@@ -91,7 +91,7 @@ Set these on the API Worker. The frontend and verification engine need no change
 | Variable | Values | Default |
 | --- | --- | --- |
 | `REFERENCE_MODE` | `demo` or `authorized_live` | `demo` |
-| `GREENBOOK_ACCESS_APPROVAL` | Where NAFDAC's permission is recorded, such as `NAFDAC email 2026-11-02, ref 123` | Empty |
+| `GREENBOOK_ACCESS_BASIS` | The actual basis for live requests, such as `public-endpoint-hackathon-evaluation-2026-10-31` | Empty |
 
 | `REFERENCE_MODE` | Approval | Behaviour |
 | --- | --- | --- |
@@ -105,7 +105,7 @@ Set these on the API Worker. The frontend and verification engine need no change
 npx wrangler deploy --var REFERENCE_MODE:demo
 
 # Live mode: only after this document records NAFDAC's permission
-npx wrangler deploy --var REFERENCE_MODE:authorized_live --var "GREENBOOK_ACCESS_APPROVAL:<where it is recorded>"
+npx wrangler deploy --var REFERENCE_MODE:authorized_live --var "GREENBOOK_ACCESS_BASIS:<where it is recorded>"
 ```
 
 The endpoint, 8 second timeout, cache lifetimes and request limits are constants at the top of `apps/api/src/adapters/greenbook.ts`, so they are changed in code rather than by configuration. Only the official origin is used.
@@ -115,7 +115,7 @@ The endpoint, 8 second timeout, cache lifetimes and request limits are constants
 **Do not run this until the permission above is recorded.** It has not been run yet. It is never part of `npm test` or CI, and it refuses to start without an approval, before any request is sent.
 
 ```sh
-GREENBOOK_ACCESS_APPROVAL="<where it is recorded>" npm run smoke:greenbook --workspace @counterfeitiq/api
+GREENBOOK_ACCESS_BASIS="<where it is recorded>" npm run smoke:greenbook --workspace @counterfeitiq/api
 ```
 
 It sends one lookup for `A6-100103` through the real adapter, checks for an exact match with live provenance, and prints only the outcome. It prints no headers or cookies.

@@ -1,6 +1,6 @@
 import type { MedicineReference, ReferenceLookupResult } from '@counterfeitiq/shared';
 import { normalizeNafdacNumber } from '../services/normalize';
-import { INVALID_NUMBER_NOTE, notExecuted, type ReferenceAdapter } from './contract';
+import { canonicalNafdacNumber, INVALID_NUMBER_NOTE, notExecuted, type ReferenceAdapter } from './contract';
 
 export const GREENBOOK_URL = 'https://greenbook.nafdac.gov.ng/';
 
@@ -190,7 +190,7 @@ function interpretPage(page: SearchPage, key: string, requestedAt: string): Refe
   // The unseen results could hold the record, or a second one with the same number.
   if (page.recordsFiltered > page.rows.length) return unavailable(requestedAt, NOTES.tooBroad);
 
-  const matches = page.rows.filter((row) => normalizeNafdacNumber(cleanText(row.NAFDAC)) === key);
+  const matches = page.rows.filter((row) => canonicalNafdacNumber(cleanText(row.NAFDAC) ?? '') === key);
   if (matches.length === 0) {
     return { status: 'NOT_FOUND', record: null, provenance: liveProvenance(requestedAt) };
   }
@@ -287,7 +287,7 @@ export function createGreenbookAdapter(options: GreenbookOptions = {}): Referenc
     async lookupMedicine(nafdacNumber: string): Promise<ReferenceLookupResult> {
       if (!normalizeNafdacNumber(nafdacNumber)) return notExecuted(INVALID_NUMBER_NOTE);
       const query = toGreenbookQuery(nafdacNumber);
-      const key = query && normalizeNafdacNumber(query);
+      const key = query && canonicalNafdacNumber(query);
       if (!key) return notExecuted(NOTES.needsHyphen);
 
       const nowMs = now().getTime();

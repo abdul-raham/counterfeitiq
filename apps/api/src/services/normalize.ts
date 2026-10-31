@@ -9,6 +9,7 @@ function normalizeText(value: string | null): string | null {
 }
 
 const NAME_DOSAGE = /\d[\d.,]*\s*(?:µg|μg|mcg|mg|g|ml|iu)\b(?:\s*\/\s*\d[\d.,]*\s*(?:ml|l)\b)?/g;
+const NAME_QUALIFIER = /\([^)]*\)/g;
 const NAME_FORM = /\b(?:tablet|capsule|caplet|syrup|suspension|injection|cream|ointment)s?\b/g;
 
 function joinHyphenated(value: string): string {
@@ -22,6 +23,7 @@ export function normalizeProductName(value: string | null): string | null {
   const withoutDetails = value
     .normalize('NFKC')
     .toLowerCase()
+    .replace(NAME_QUALIFIER, ' ')
     .replace(NAME_DOSAGE, ' ')
     .replace(NAME_FORM, ' ');
   const normalized = normalizeText(withoutDetails);
@@ -44,7 +46,8 @@ export function productNamesConflict(first: string | null, second: string | null
     return a.length > 0 && b.length > 0 && a.join('|') !== b.join('|');
   };
   return differ(NAME_DOSAGE, (dosage) => normalizeStrength(dosage) ?? dosage)
-    || differ(NAME_FORM, (form) => form.replace(/s$/, ''));
+    || differ(NAME_FORM, (form) => form.replace(/s$/, ''))
+    || differ(NAME_QUALIFIER, (qualifier) => qualifier);
 }
 
 export function normalizeNafdacNumber(value: string | null): string | null {

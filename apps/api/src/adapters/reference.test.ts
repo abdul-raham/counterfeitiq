@@ -325,7 +325,7 @@ describe('lookups that must not run', () => {
   ])('makes no Greenbook request for %s', async (_label, product) => {
     const fetchMock = vi.fn<typeof fetch>();
     vi.stubGlobal('fetch', fetchMock);
-    const dependencies = createDependencies({ REFERENCE_MODE: 'authorized_live', GREENBOOK_ACCESS_APPROVAL: 'test' });
+    const dependencies = createDependencies({ REFERENCE_MODE: 'authorized_live', GREENBOOK_ACCESS_BASIS: 'test' });
     dependencies.extractProduct = async () => ({
       productName: 'Pack', brand: null, manufacturer: null, strength: null, ingredients: [],
       batchNumber: null, manufacturingDate: null, expiryDate: null, ...product,
@@ -381,7 +381,7 @@ describe('provider selection', () => {
     const fetchMock = vi.fn<typeof fetch>();
     const adapter = createReferenceAdapter({
       mode: 'authorized_live',
-      greenbookAccessApproval: approval,
+      greenbookAccessBasis: approval,
       greenbook: { fetch: fetchMock, state: createGreenbookState() },
     });
     expect(await adapter.lookupMedicine('A6-100103')).toMatchObject({ status: 'SOURCE_UNAVAILABLE', provenance: notRun });
@@ -392,7 +392,7 @@ describe('provider selection', () => {
     const fetchMock = vi.fn<typeof fetch>().mockImplementation(async () => jsonResponse(page([A6_100103])));
     const adapter = createReferenceAdapter({
       mode: 'authorized_live',
-      greenbookAccessApproval: 'NAFDAC email, 2026-11-02',
+      greenbookAccessBasis: 'NAFDAC email, 2026-11-02',
       greenbook: { fetch: fetchMock, now: () => NOW, state: createGreenbookState() },
     });
     expect(await adapter.lookupMedicine('A6-100103')).toMatchObject({
@@ -408,7 +408,7 @@ describe('provider selection', () => {
   ])('never answers from fixtures after %s in live mode', async (_name, respond) => {
     const adapter = createReferenceAdapter({
       mode: 'authorized_live',
-      greenbookAccessApproval: 'test',
+      greenbookAccessBasis: 'test',
       greenbook: { fetch: vi.fn<typeof fetch>().mockImplementation(respond), now: () => NOW, state: createGreenbookState() },
     });
     const result = await adapter.lookupMedicine('A1-123456');
@@ -420,7 +420,7 @@ describe('provider selection', () => {
     const demo = await createReferenceAdapter({ mode: 'demo' }).lookupMedicine('A1-123456');
     const live = await createReferenceAdapter({
       mode: 'authorized_live',
-      greenbookAccessApproval: 'test',
+      greenbookAccessBasis: 'test',
       greenbook: {
         fetch: vi.fn<typeof fetch>().mockImplementation(async () => jsonResponse(page([A6_100103]))),
         state: createGreenbookState(),

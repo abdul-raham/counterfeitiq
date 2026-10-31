@@ -67,7 +67,12 @@ function compareIngredients(packaging: string[], reference: string[]): Verificat
   const overlap = packagingValues.some((ingredient) => referenceSet.has(ingredient));
   const oneListContainsTheOther = packagingValues.every((ingredient) => referenceSet.has(ingredient))
     || referenceValues.every((ingredient) => packagingSet.has(ingredient));
-  if (!matches && overlap && oneListContainsTheOther) {
+  // Records and packs often name one ingredient differently, such as "Hepatitis B vaccine"
+  // and "Hepatitis B surface antigen". A shared word means a conflict cannot be concluded.
+  const words = (values: string[]) => values.flatMap((value) => value.split(' ')).filter((word) => word.length > 3);
+  const referenceWords = new Set(words(referenceValues));
+  const sharedWord = words(packagingValues).some((word) => referenceWords.has(word));
+  if (!matches && ((overlap && oneListContainsTheOther) || sharedWord)) {
     return {
       code: 'INGREDIENTS_UNKNOWN', field: 'ingredients', status: 'UNKNOWN', severity: 'INFO',
       packagingValue: packaging.join(', '), referenceValue: reference.join(', '),

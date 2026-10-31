@@ -33,6 +33,7 @@ describe('product names', () => {
     ['Examplol 2.5 mg/5 ml Syrup', 'Examplol'],
     ['Co-Examplol', 'Coexamplol'],
     ['Examplol 1 g Tablets', 'Examplol 1000 mg'],
+    ['Recombinant Hepatitis B Vaccine', 'Recombinant Hepatitis B Vaccine 0.5 mL (Pediatric)'],
     ['Examplol 125mg/5ml Syrup 100ml', 'Examplol 125mg/5ml Syrup'],
     ['Examplol 125mg/5ml Syrup 100ml', 'Examplol 125mg/5ml Syrup 200ml'],
   ])('treats "%s" and "%s" as the same product', (onPack, onRecord) => {
@@ -42,6 +43,7 @@ describe('product names', () => {
   it.each([
     ['Examplol 250mg Tablets', 'Examplol 500mg Tablets'],
     ['Examplol Tablets', 'Examplol Syrup'],
+    ['Examplol (Adult)', 'Examplol (Pediatric)'],
     ['Examplol 125mg/5ml Syrup 100ml', 'Examplol 250mg/5ml Syrup 100ml'],
     ['Examplol Extra', 'Examplol'],
   ])('keeps the real difference between "%s" and "%s"', (onPack, onRecord) => {
@@ -51,6 +53,21 @@ describe('product names', () => {
   it('does not treat a dosage stated on only one side as a conflict', () => {
     expect(productNamesConflict('Examplol 500mg', 'Examplol')).toBe(false);
     expect(normalizeProductName('500 mg tablets')).toBeNull();
+  });
+});
+
+describe('ingredients on real records', () => {
+  function ingredientStatus(onPack: string[], onRecord: string[]) {
+    const findings = compareProduct({ ...pack, ingredients: onPack }, { ...record, ingredients: onRecord });
+    return findings.find((finding) => finding.field === 'ingredients')?.status;
+  }
+
+  it('does not call a different name for the same ingredient a mismatch', () => {
+    expect(ingredientStatus(['Hepatitis B Surface Antigen'], ['Hepatitis B vaccine'])).toBe('UNKNOWN');
+  });
+
+  it('still reports clearly different ingredients', () => {
+    expect(ingredientStatus(['Ibuprofen'], ['Paracetamol'])).toBe('MISMATCH');
   });
 });
 
