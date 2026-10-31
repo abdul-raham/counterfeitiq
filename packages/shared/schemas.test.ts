@@ -31,14 +31,14 @@ describe('lookup contract', () => {
     expect(shouldLookupMedicine({ category: 'food', nafdacNumber: 'A1-123' })).toBe(false);
   });
 
-  it.each(['medicine', 'Medicines', 'drug', 'medication', 'pharmaceutical', 'medicinal product'])(
+  it.each(['medicine', 'Medicines', 'drug', 'medication', 'pharmaceutical', 'medicinal product', 'medical device'])(
     'executes a medicine lookup for the explicit category alias %s',
     (category) => {
       expect(shouldLookupMedicine({ category, nafdacNumber: 'A1-123' })).toBe(true);
     },
   );
 
-  it.each(['food', 'cosmetic', 'medical device', null])(
+  it.each(['food', 'cosmetic', null])(
     'does not broaden Greenbook lookup to %s',
     (category) => {
       expect(shouldLookupMedicine({ category, nafdacNumber: 'A1-123' })).toBe(false);
