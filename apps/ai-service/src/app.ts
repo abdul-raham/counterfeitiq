@@ -202,7 +202,7 @@ async function erpRoute(request: Request, pathname: string, env: Env, overrides:
   }
 
   const [, , rawGtin, child, rawKey] = pathname.split('/');
-  let key: string | null = null;
+  let key: string | null;
   try {
     key = rawKey ? decodeURIComponent(rawKey) : null;
   } catch {
