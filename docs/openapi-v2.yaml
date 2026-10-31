@@ -1,0 +1,511 @@
+openapi: 3.1.0
+info:
+  title: CounterfeitIQ V2 API
+  version: 2.0.0-alpha.1
+  description: Manufacturer-led product authentication. A successful code check does not prove physical authenticity.
+  license:
+    name: MIT
+    identifier: MIT
+servers:
+  - url: https://api.counterfeitiq.example
+security: []
+tags:
+  - name: Public
+    description: Anonymous product discovery and authentication
+  - name: Manufacturer
+    description: Tenant-scoped manufacturer operations
+  - name: Admin
+    description: Explicit platform-administrator operations
+  - name: AI
+    description: Authenticated, non-authoritative AI service boundary
+paths:
+  /api/public/scan/{identifier}:
+    get:
+      tags: [Public]
+      operationId: scanPublicPack
+      summary: Read public pack and product information without consuming its secret code
+      parameters:
+        - $ref: '#/components/parameters/PublicIdentifier'
+      responses:
+        '200':
+          description: Public product summary
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PublicProductSummary' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /api/public/authenticate:
+    post:
+      tags: [Public]
+      operationId: authenticatePublicPack
+      summary: Validate a concealed code and append a verification event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AuthenticatePackRequest' }
+      responses:
+        '200':
+          description: Constant-shape authentication result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthenticatePackResponse' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /api/public/investigations:
+    post:
+      tags: [Public]
+      operationId: createPublicInvestigation
+      summary: Create an optional evidence investigation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateInvestigationRequest' }
+      responses:
+        '201':
+          description: Investigation created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Investigation' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/manufacturer/applications:
+    post:
+      tags: [Manufacturer]
+      operationId: createManufacturerApplication
+      summary: Submit a manufacturer application
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateManufacturerApplicationRequest' }
+      responses:
+        '201':
+          description: Application submitted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ManufacturerApplication' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/manufacturer/products:
+    get:
+      tags: [Manufacturer]
+      operationId: listManufacturerProducts
+      summary: List products for the caller's manufacturer only
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Tenant-scoped products
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, nextCursor]
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/Product' } }
+                  nextCursor: { type: [string, 'null'] }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Manufacturer]
+      operationId: createManufacturerProduct
+      summary: Register a product claim for the caller's manufacturer
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateProductRequest' }
+      responses:
+        '201':
+          description: Product created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Product' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/manufacturer/batches:
+    post:
+      tags: [Manufacturer]
+      operationId: createManufacturerBatch
+      summary: Create a batch under a tenant-owned product
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateBatchRequest' }
+      responses:
+        '201':
+          description: Batch created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Batch' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/manufacturer/code-allocations:
+    post:
+      tags: [Manufacturer]
+      operationId: createCodeAllocation
+      summary: Generate a tenant-owned pack/code allocation
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateCodeAllocationRequest' }
+      responses:
+        '201':
+          description: Allocation generated; secret export is a separate controlled operation
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CodeAllocation' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/manufacturer/code-allocations/{id}/activate:
+    post:
+      tags: [Manufacturer]
+      operationId: activateCodeAllocation
+      summary: Activate a reconciled allocation
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/EntityId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ActivateCodeAllocationRequest' }
+      responses:
+        '200':
+          description: Allocation activated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CodeAllocation' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/manufacturer/verification-events:
+    get:
+      tags: [Manufacturer]
+      operationId: listManufacturerVerificationEvents
+      summary: List verification events scoped to the caller's manufacturer
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Tenant-scoped append-only events
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, nextCursor]
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/VerificationEvent' } }
+                  nextCursor: { type: [string, 'null'] }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/admin/applications:
+    get:
+      tags: [Admin]
+      operationId: listManufacturerApplications
+      summary: List manufacturer applications
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Applications
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, nextCursor]
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/ManufacturerApplication' } }
+                  nextCursor: { type: [string, 'null'] }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/admin/manufacturers/{id}/decision:
+    post:
+      tags: [Admin]
+      operationId: decideManufacturerApplication
+      summary: Approve or reject an application without asserting regulator approval
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/EntityId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ManufacturerDecisionRequest' }
+      responses:
+        '200':
+          description: Decision recorded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ManufacturerApplication' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/admin/codes/{id}/revoke:
+    post:
+      tags: [Admin]
+      operationId: revokeAuthenticationCode
+      summary: Revoke an authentication code and append an audit event
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/EntityId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RevokeCodeRequest' }
+      responses:
+        '204': { description: Code revoked }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/ai/extract:
+    post:
+      tags: [AI]
+      operationId: extractPackagingClaims
+      summary: Authenticated non-authoritative packaging extraction boundary
+      security: [{ serviceAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AiExtractionRequest' }
+      responses:
+        '200':
+          description: Non-authoritative extraction
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AiExtractionResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+    serviceAuth: { type: http, scheme: bearer }
+  parameters:
+    PublicIdentifier:
+      name: identifier
+      in: path
+      required: true
+      schema: { type: string, minLength: 16, maxLength: 128 }
+    EntityId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  responses:
+    BadRequest: { description: Invalid request, content: { application/json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    Unauthorized: { description: Authentication required, content: { application/json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    Forbidden: { description: Permission denied, content: { application/json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    NotFound: { description: Resource not found, content: { application/json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    Conflict: { description: State conflict, content: { application/json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    RateLimited: { description: Rate limited, headers: { Retry-After: { schema: { type: integer } } }, content: { application/json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    Unavailable: { description: Service unavailable, content: { application/json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+  schemas:
+    ApiErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, retryable, requestId]
+          properties:
+            code: { type: string, enum: [VALIDATION_ERROR, UNAUTHENTICATED, FORBIDDEN, NOT_FOUND, CONFLICT, RATE_LIMITED, SERVICE_UNAVAILABLE, INTERNAL_ERROR] }
+            message: { type: string }
+            retryable: { type: boolean }
+            requestId: { type: string }
+    Product:
+      type: object
+      required: [id, manufacturerId, name, brand, description, dosageForm, strength, activeIngredients, nafdacNumber, status, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        manufacturerId: { type: string, format: uuid }
+        name: { type: string }
+        brand: { type: [string, 'null'] }
+        description: { type: [string, 'null'] }
+        dosageForm: { type: [string, 'null'] }
+        strength: { type: [string, 'null'] }
+        activeIngredients: { type: array, items: { type: string } }
+        nafdacNumber: { type: [string, 'null'] }
+        status: { type: string, enum: [DRAFT, ACTIVE, SUSPENDED, RETIRED] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    Batch:
+      type: object
+      required: [id, manufacturerId, productId, batchNumber, manufacturingDate, expiryDate, status, createdAt, activatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        manufacturerId: { type: string, format: uuid }
+        productId: { type: string, format: uuid }
+        batchNumber: { type: string }
+        manufacturingDate: { type: [string, 'null'], format: date }
+        expiryDate: { type: [string, 'null'], format: date }
+        status: { type: string, enum: [DRAFT, ACTIVE, BLOCKED, RECALLED, EXPIRED] }
+        createdAt: { type: string, format: date-time }
+        activatedAt: { type: [string, 'null'], format: date-time }
+    CodeAllocation:
+      type: object
+      required: [id, manufacturerId, batchId, quantity, status, generatedCount, activatedCount, createdAt, activatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        manufacturerId: { type: string, format: uuid }
+        batchId: { type: string, format: uuid }
+        quantity: { type: integer, minimum: 1 }
+        status: { type: string, enum: [DRAFT, GENERATED, ACTIVE, CANCELLED] }
+        generatedCount: { type: integer, minimum: 0 }
+        activatedCount: { type: integer, minimum: 0 }
+        createdAt: { type: string, format: date-time }
+        activatedAt: { type: [string, 'null'], format: date-time }
+    ManufacturerApplication:
+      allOf:
+        - $ref: '#/components/schemas/CreateManufacturerApplicationRequest'
+        - type: object
+          required: [id, applicantUserId, status, decisionReason, submittedAt, decidedAt]
+          properties:
+            id: { type: string, format: uuid }
+            applicantUserId: { type: string, format: uuid }
+            status: { type: string, enum: [SUBMITTED, UNDER_REVIEW, APPROVED, REJECTED] }
+            decisionReason: { type: [string, 'null'] }
+            submittedAt: { type: string, format: date-time }
+            decidedAt: { type: [string, 'null'], format: date-time }
+    CreateManufacturerApplicationRequest:
+      type: object
+      additionalProperties: false
+      required: [legalName, displayName, registrationNumber, nafdacManufacturerNumber, contactEmail, contactPhone, evidenceUrls]
+      properties:
+        legalName: { type: string, minLength: 2, maxLength: 200 }
+        displayName: { type: string, minLength: 2, maxLength: 120 }
+        registrationNumber: { type: [string, 'null'] }
+        nafdacManufacturerNumber: { type: [string, 'null'] }
+        contactEmail: { type: string, format: email }
+        contactPhone: { type: [string, 'null'] }
+        evidenceUrls: { type: array, maxItems: 10, items: { type: string, format: uri } }
+    CreateProductRequest:
+      type: object
+      additionalProperties: false
+      required: [name, brand, description, dosageForm, strength, activeIngredients, nafdacNumber]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        brand: { type: [string, 'null'] }
+        description: { type: [string, 'null'] }
+        dosageForm: { type: [string, 'null'] }
+        strength: { type: [string, 'null'] }
+        activeIngredients: { type: array, items: { type: string } }
+        nafdacNumber: { type: [string, 'null'] }
+    CreateBatchRequest:
+      type: object
+      additionalProperties: false
+      required: [productId, batchNumber, manufacturingDate, expiryDate]
+      properties:
+        productId: { type: string, format: uuid }
+        batchNumber: { type: string, minLength: 1, maxLength: 100 }
+        manufacturingDate: { type: [string, 'null'], format: date }
+        expiryDate: { type: [string, 'null'], format: date }
+    CreateCodeAllocationRequest:
+      type: object
+      additionalProperties: false
+      required: [batchId, quantity]
+      properties:
+        batchId: { type: string, format: uuid }
+        quantity: { type: integer, minimum: 1, maximum: 100000 }
+    ActivateCodeAllocationRequest:
+      type: object
+      additionalProperties: false
+      required: [reconciliationCount, confirmation]
+      properties:
+        reconciliationCount: { type: integer, minimum: 1 }
+        confirmation: { const: LABELS_RECONCILED }
+    ManufacturerDecisionRequest:
+      type: object
+      additionalProperties: false
+      required: [decision, reason]
+      properties:
+        decision: { type: string, enum: [APPROVE, REJECT] }
+        reason: { type: string, minLength: 1, maxLength: 1000 }
+    RevokeCodeRequest:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 1, maxLength: 1000 }
+    PublicProductSummary:
+      type: object
+      required: [product, manufacturer, batch, pack, secretCodeRequired, authenticityConfirmed]
+      properties:
+        product: { $ref: '#/components/schemas/Product' }
+        manufacturer:
+          type: object
+          required: [id, displayName]
+          properties: { id: { type: string, format: uuid }, displayName: { type: string } }
+        batch: { $ref: '#/components/schemas/Batch' }
+        pack:
+          type: object
+          required: [publicIdentifier, status]
+          properties:
+            publicIdentifier: { type: string }
+            status: { type: string, enum: [INACTIVE, ACTIVE, REVOKED, BLOCKED] }
+        secretCodeRequired: { const: true }
+        authenticityConfirmed: { const: false }
+    AuthenticatePackRequest:
+      type: object
+      additionalProperties: false
+      required: [publicIdentifier, secretCode]
+      properties:
+        publicIdentifier: { type: string, minLength: 16, maxLength: 128 }
+        secretCode: { type: string, minLength: 16, maxLength: 256, writeOnly: true }
+    AuthenticatePackResponse:
+      type: object
+      required: [outcome, product, checkedAt, firstVerifiedAt, message, authenticityConfirmed]
+      properties:
+        outcome: { $ref: '#/components/schemas/AuthenticationOutcome' }
+        product: { oneOf: [{ $ref: '#/components/schemas/PublicProductSummary' }, { type: 'null' }] }
+        checkedAt: { type: string, format: date-time }
+        firstVerifiedAt: { type: [string, 'null'], format: date-time }
+        message: { type: string }
+        authenticityConfirmed: { const: false }
+    AuthenticationOutcome:
+      type: string
+      enum: [FIRST_VERIFICATION, PREVIOUSLY_VERIFIED, INVALID_CODE, PRODUCT_MISMATCH, CODE_REVOKED, BATCH_BLOCKED, CODE_NOT_ACTIVE, VERIFICATION_UNAVAILABLE]
+    VerificationEvent:
+      type: object
+      required: [id, manufacturerId, productId, batchId, packId, authenticationCodeId, outcome, publicIdentifier, occurredAt, requestId, ipHash, userAgentHash, metadata]
+      properties:
+        id: { type: string, format: uuid }
+        manufacturerId: { type: [string, 'null'], format: uuid }
+        productId: { type: [string, 'null'], format: uuid }
+        batchId: { type: [string, 'null'], format: uuid }
+        packId: { type: [string, 'null'], format: uuid }
+        authenticationCodeId: { type: [string, 'null'], format: uuid }
+        outcome: { $ref: '#/components/schemas/AuthenticationOutcome' }
+        publicIdentifier: { type: [string, 'null'] }
+        occurredAt: { type: string, format: date-time }
+        requestId: { type: string }
+        ipHash: { type: [string, 'null'] }
+        userAgentHash: { type: [string, 'null'] }
+        metadata: { type: object, additionalProperties: true }
+    CreateInvestigationRequest:
+      type: object
+      required: [publicIdentifier, authenticationOutcome, aiAnalysis, notes]
+      properties:
+        publicIdentifier: { type: [string, 'null'] }
+        authenticationOutcome: { oneOf: [{ $ref: '#/components/schemas/AuthenticationOutcome' }, { type: 'null' }] }
+        aiAnalysis: { type: [object, 'null'], description: Existing AnalysisResponse contract }
+        notes: { type: [string, 'null'], maxLength: 2000 }
+    Investigation:
+      type: object
+      required: [id, publicIdentifier, authenticationOutcome, aiAnalysis, report, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        publicIdentifier: { type: [string, 'null'] }
+        authenticationOutcome: { oneOf: [{ $ref: '#/components/schemas/AuthenticationOutcome' }, { type: 'null' }] }
+        aiAnalysis: { type: [object, 'null'] }
+        report: { type: [object, 'null'] }
+        createdAt: { type: string, format: date-time }
+    AiExtractionRequest:
+      type: object
+      additionalProperties: false
+      required: [imageUrl, requestId]
+      properties:
+        imageUrl: { type: string, format: uri }
+        requestId: { type: string }
+    AiExtractionResult:
+      type: object
+      required: [extracted, provider, model, completedAt, authoritative]
+      properties:
+        extracted: { type: object, additionalProperties: true }
+        provider: { type: string }
+        model: { type: string }
+        completedAt: { type: string, format: date-time }
+        authoritative: { const: false }

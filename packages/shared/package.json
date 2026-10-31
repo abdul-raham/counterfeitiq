@@ -3,7 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "exports": { ".": "./schemas.ts" },
+  "exports": {
+    ".": "./schemas.ts",
+    "./v2": "./v2.ts"
+  },
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
