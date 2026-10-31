@@ -62,6 +62,7 @@ function DetailCard({ children }: { children: ReactNode }) {
 }
 
 function Sources({ sources }: { sources: Provenance[] }) {
+  if (sources.some((source) => source.isDemo)) return null;
   const used = sources.filter((source) => source.retrievalStatus !== 'NOT_ATTEMPTED');
   const names = [...new Set(used.map((source) => source.sourceName))];
   const retrievedAt = formatDateTime(used.find((source) => source.retrievedAt)?.retrievedAt ?? null);

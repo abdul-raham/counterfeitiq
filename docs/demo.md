@@ -27,7 +27,7 @@ Each code on `/demo` also has an "Open result" link, if a camera fails on stage.
 ## Three-minute script
 
 1. **The problem:** "People can't easily check what a medicine's manufacturer has on record for the pack in their hand."
-2. **Scan the product code:** show the product and the manufacturer, and say that the source line names a simulated system. Say that this code identifies the product type, so every pack shares it.
+2. **Scan the product code:** show the product and the manufacturer, and say that this comes from a simulated system. Say that this code identifies the product type, so every pack shares it.
 3. **Scan the serialized pack:** show the batch and pack details.
 4. **Scan the same pack again:** show the repeat notice, and answer "Is this pack still sealed?". Sealed leads to a pharmacist. Opened leads to the seller.
 5. **Scan the recalled batch:** show the warning.

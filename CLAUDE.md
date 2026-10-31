@@ -15,7 +15,7 @@ CounterfeitIQ reads a product photo and compares what it finds with the NAFDAC G
 
 - A GTIN alone identifies a trade item, never one pack. Only a serial number reaches `PACK`, and only a known pack gets a scan signal.
 - ERP failures are `SOURCE_UNAVAILABLE`, never `NOT_FOUND`. Repeat scans are neutral facts, with no verdict or threshold, because the rescan policy is undecided.
-- Simulated ERP data stays labelled fictional and never reaches a live registry. No real manufacturer or NAFDAC partnership exists, so never imply one.
+- Simulated ERP data stays marked as demo in the API (`isDemo`), and the site says the demonstration is fictional on the home, `/demo` and help pages. It never reaches a live registry. No real manufacturer or NAFDAC partnership exists, so never imply one.
 
 ## Before finishing work
 
