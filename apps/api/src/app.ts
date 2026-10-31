@@ -95,7 +95,8 @@ async function route(request: Request, url: URL, env: Env): Promise<Response> {
       service: 'counterfeitiq-api',
       environment: env.ENVIRONMENT ?? 'production',
       visionConfigured: Boolean(env.AI && env.GEMMA_MODEL),
-      referenceMode: env.REFERENCE_MODE ?? 'demo',
+      // Reported this way because NAFDAC has not authorized the live lookups.
+      referenceMode: env.REFERENCE_MODE === 'authorized_live' ? 'experimental_live' : 'demo',
       timestamp: new Date().toISOString(),
     });
   }

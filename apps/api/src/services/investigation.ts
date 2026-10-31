@@ -110,7 +110,7 @@ export function buildInvestigation(
     return {
       ...base, status: 'REGISTRATION_DETAILS_MATCH', findings,
       summary: `The registration number and available core details match, but some fields were unavailable. This does not confirm physical authenticity.${fixtureNote}${expirySummary}`,
-      recommendedActions: ['Review the unknown fields as unavailable evidence, not confirmed matches.', ...expiryActions],
+      recommendedActions: ['Some details could not be compared. Treat them as unknown, not as matches.', ...expiryActions],
     };
   }
 
