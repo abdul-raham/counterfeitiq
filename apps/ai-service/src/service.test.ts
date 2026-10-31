@@ -34,6 +34,8 @@ const DEMOZOL_PACK = {
   expiryDate: clear('2028-01', 'Exp: 2028-01'),
 };
 
+const NUMBERLESS_PACK = { ...DEMOZOL_PACK, nafdacNumber: { value: null, evidence: null, legibility: null } };
+
 const extraction = (fields: Partial<Record<FieldName, RawField>> = DEMOZOL_PACK, rest: Record<string, unknown> = {}): Extraction =>
   parseModelReply(JSON.stringify(modelReply(fields, rest)));
 
@@ -253,8 +255,7 @@ describe('product matching', () => {
   });
 
   it('uses the strength to narrow the candidates when the number is missing', async () => {
-    const { nafdacNumber: _omitted, ...pack } = DEMOZOL_PACK;
-    const result = await matchProduct(extraction(pack), source);
+    const result = await matchProduct(extraction(NUMBERLESS_PACK), source);
     expect(result.outcome).toBe('SINGLE_CANDIDATE');
     expect(result.candidates[0]?.record.nafdacNumber).toBe('DEMO-0101');
     expect(result.explanation).toContain('no registration number confirms it');
@@ -336,8 +337,7 @@ describe('deterministic comparison', () => {
 
   it('reports a missing identifier without a lookup', async () => {
     const lookup = vi.fn();
-    const { nafdacNumber: _omitted, ...pack } = DEMOZOL_PACK;
-    const result = await compare(extraction(pack), undefined, { ...source, lookup });
+    const result = await compare(extraction(NUMBERLESS_PACK), undefined, { ...source, lookup });
     expect(result.status).toBe('INSUFFICIENT_EVIDENCE');
     expect(result.packagingNotes.map((note) => note.code)).toContain('MISSING_PRODUCT_IDENTIFIER');
     expect(result.provenance.category).toBe('NO_SOURCE');
