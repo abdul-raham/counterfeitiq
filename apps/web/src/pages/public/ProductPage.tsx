@@ -8,7 +8,7 @@ import { ReportSection } from '../../components/ReportSection';
 import { Skeleton } from '../../components/Skeleton';
 import { StatusMessage, type Tone } from '../../components/StatusMessage';
 import { RecordDetails } from '../../features/report/RecordDetails';
-import { RepeatScanNotice } from '../../features/scan/RepeatScanNotice';
+import { PackCheck } from '../../features/scan/PackCheck';
 import { toRequestError } from '../../lib/errors';
 import { formatDate } from '../../lib/format';
 import { scanOnce } from '../../lib/v3/client';
@@ -71,7 +71,7 @@ function Sources({ sources }: { sources: Provenance[] }) {
 }
 
 function LookupResult({ report, reportLink, code, fromQr }: { report: ProductReport; reportLink: string; code: string; fromQr: boolean }) {
-  const { outcome, product, batch, pack, sources, warnings, explanation, notice, scanSignal, identityLevel, registrationReference } = report;
+  const { outcome, product, batch, pack, sources, warnings, explanation, notice, identityLevel, registrationReference } = report;
 
   if (fromQr && isFakeQrCode(report)) {
     return (
@@ -118,8 +118,6 @@ function LookupResult({ report, reportLink, code, fromQr }: { report: ProductRep
     );
   }
 
-  // A repeat only means something for one serialized pack. Every pack of a product shares its product code.
-  const repeat = identityLevel === 'PACK' && scanSignal && scanSignal.totalScans > 1 ? scanSignal : null;
   const noteworthy = warnings.filter((warning) => warning.code !== 'SCAN_HISTORY_UNAVAILABLE');
 
   return (
@@ -136,18 +134,19 @@ function LookupResult({ report, reportLink, code, fromQr }: { report: ProductRep
         {product.manufacturer && <p className="text-sm text-muted">{product.manufacturer}</p>}
         <p className="mt-1 text-2xl font-semibold leading-tight tracking-tight">{product.productName}</p>
         <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-line pt-4 text-sm">
-          <Detail label="Brand" value={product.brand} />
-          <Detail label="Strength" value={product.strength} />
           <Detail label="Form" value={product.dosageForm} />
           <Detail label="Category" value={product.category} />
           <Detail label="Active ingredients" value={product.ingredients.join(', ') || null} />
-          <Detail label="NAFDAC number" value={product.nafdacNumber} />
         </dl>
       </section>
 
       <div className="mt-3"><Sources sources={sources} /></div>
 
-      {repeat && <div className="mt-3"><RepeatScanNotice signal={repeat} reportLink={reportLink} /></div>}
+      <PackCheck
+        report={report}
+        reportLink={reportLink}
+        hasSeriousWarning={noteworthy.some((warning) => SERIOUS_WARNINGS.has(warning.code))}
+      />
 
       {batch && (
         <ReportSection title="Batch">

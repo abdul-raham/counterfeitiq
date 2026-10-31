@@ -6,7 +6,7 @@ const DEMO_CODES = [
   { label: 'Product code', shows: 'The product and manufacturer.', identifier: '2000000001012', image: '1-product.png' },
   { label: 'Product with no batch data', shows: 'A product with nothing else indexed.', identifier: '2000000001029', image: '2-product-no-batch-data.png' },
   { label: 'Batch code', shows: 'Adds batch details.', identifier: '(01)02000000001012(10)DX2041', image: '3-batch-code.png' },
-  { label: 'Serialized pack, try it twice', shows: 'Adds pack details. A second scan asks whether the pack is sealed.', identifier: '(01)02000000001012(10)DX2041(17)280131(21)DEMOSN0001', image: '4-serialized-pack.png' },
+  { label: 'Serialized pack, try it twice', shows: 'Adds pack details. A scan from a second device asks about the scratch panel.', identifier: '(01)02000000001012(10)DX2041(17)280131(21)DEMOSN0001', image: '4-serialized-pack.png' },
   { label: 'Recalled batch', shows: 'A recall warning.', identifier: '(01)02000000001012(10)DX2042', image: '5-recalled-batch.png' },
   { label: 'Expired batch', shows: 'An expiry warning.', identifier: '(01)02000000001012(10)DX1999', image: '6-expired-batch.png' },
   { label: 'Blocked pack', shows: 'A blocked pack warning.', identifier: '(01)02000000001012(21)DEMOSN0003', image: '7-blocked-pack.png' },
@@ -20,7 +20,7 @@ export function DemoPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
       <PageHeading title="Demo QR codes">
-        Show this page on one screen, and scan a code with a phone's camera. Every company and product here is fictional. Only the serialized pack shows a repeat scan notice, because every pack of a product shares the other codes.
+        Show this page on one screen, and scan a code with a phone's camera. Every company and product here is fictional. Only codes with a serial number show a repeat scan notice, because every pack of a product shares the other codes.
       </PageHeading>
       <ul className="mt-6 grid gap-4 sm:grid-cols-2">
         {DEMO_CODES.map(({ label, shows, identifier, image }) => (
