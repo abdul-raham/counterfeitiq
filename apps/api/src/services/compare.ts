@@ -5,6 +5,7 @@ import {
   normalizeNafdacNumber,
   normalizeProductName,
   normalizeStrength,
+  productNamesConflict,
 } from './normalize';
 
 type ComparableField = 'nafdacNumber' | 'productName' | 'manufacturer' | 'strength';
@@ -34,7 +35,8 @@ function compareField(
       explanation: `${label} could not be compared because one or both values are unavailable.`,
     };
   }
-  const matches = packaging === reference;
+  const matches = packaging === reference
+    && !(field === 'productName' && productNamesConflict(packagingValue, referenceValue));
   return {
     code: `${field.toUpperCase()}_${matches ? 'MATCH' : 'MISMATCH'}`,
     field,
