@@ -131,7 +131,16 @@ export function validateImageFile(file: Pick<File, 'size' | 'type'>): ApiError |
 }
 
 export function isMedicineCategory(category: string | null): boolean {
-  return category?.trim().toLowerCase() === 'medicine';
+  if (!category?.trim()) return false;
+  return new Set([
+    'medicine',
+    'medicines',
+    'medication',
+    'drug',
+    'pharmaceutical',
+    'pharmaceutical product',
+    'medicinal product',
+  ]).has(category.trim().toLowerCase());
 }
 
 export function shouldLookupMedicine(product: Pick<ExtractedProduct, 'category' | 'nafdacNumber'>): boolean {

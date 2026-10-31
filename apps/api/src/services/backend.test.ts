@@ -38,10 +38,16 @@ const liveFound: ReferenceLookupResult = {
 describe('normalization', () => {
   it('normalizes case and whitespace without erasing dosage differences', () => {
     expect(normalizeProductName(' Example   Medicine ')).toBe('example medicine');
-    expect(normalizeManufacturer('Example Pharma Ltd.')).toBe('example pharma ltd');
+    expect(normalizeManufacturer('Example Pharma Ltd.')).toBe('example pharma limited');
     expect(normalizeNafdacNumber('a1- 123456')).toBe('A1123456');
     expect(normalizeStrength('500 MG')).toBe('500mg');
     expect(normalizeStrength('500 mg')).not.toBe(normalizeStrength('250 mg'));
+  });
+
+  it('normalizes conservative manufacturer suffix and product dosage formatting', () => {
+    expect(normalizeManufacturer('Example Pharma Ltd.')).toBe(normalizeManufacturer('Example Pharma Limited'));
+    expect(normalizeProductName('Examplol 500mg Tablets')).toBe(normalizeProductName('Examplol'));
+    expect(normalizeProductName('Examplol Extra')).not.toBe(normalizeProductName('Examplol'));
   });
 
   it('preserves decimal strength and canonicalizes thousands and micrograms', () => {
@@ -52,6 +58,9 @@ describe('normalization', () => {
     expect(normalizeStrength('500 μg')).toBe(normalizeStrength('500 µg'));
     expect(normalizeStrength('1,000mg')).toBe(normalizeStrength('1000 mg'));
     expect(normalizeStrength('125 mg + 250 mg')).toBe('125mg+250mg');
+    expect(normalizeStrength('1 g')).toBe(normalizeStrength('1000 mg'));
+    expect(normalizeStrength('500 mg')).toBe(normalizeStrength('500mg/tablet'));
+    expect(normalizeStrength('500 mg')).toBe(normalizeStrength('500 mg per tablet'));
   });
 });
 
@@ -65,6 +74,35 @@ describe('comparison', () => {
   it('detects clinically meaningful strength differences', () => {
     const findings = compareProduct({ ...extracted, strength: '250 mg' }, liveFound.status === 'FOUND' ? liveFound.record : never());
     expect(findings.find((finding) => finding.field === 'strength')).toMatchObject({ status: 'MISMATCH', severity: 'HIGH' });
+  });
+
+  it('does not create high-severity mismatches from common equivalent formatting', () => {
+    const reference = liveFound.status === 'FOUND'
+      ? {
+          ...liveFound.record,
+          productName: 'Examplol',
+          manufacturer: 'Example Pharma Limited',
+          strength: '1000 mg',
+          ingredients: ['Acetaminophen'],
+        }
+      : never();
+    const findings = compareProduct({
+      ...extracted,
+      productName: 'Examplol 1000mg Tablets',
+      manufacturer: 'Example Pharma Ltd',
+      strength: '1 g',
+      ingredients: ['Paracetamol'],
+    }, reference);
+    expect(findings.every((finding) => finding.status === 'MATCH')).toBe(true);
+  });
+
+  it('treats overlapping partial ingredient reads as unknown, not mismatch', () => {
+    const reference = liveFound.status === 'FOUND'
+      ? { ...liveFound.record, ingredients: ['Paracetamol', 'Caffeine'] }
+      : never();
+    const finding = compareProduct({ ...extracted, ingredients: ['Paracetamol'] }, reference)
+      .find((item) => item.field === 'ingredients');
+    expect(finding).toMatchObject({ status: 'UNKNOWN', severity: 'INFO' });
   });
 });
 
