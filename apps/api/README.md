@@ -40,6 +40,7 @@ Those times include upload. The 4 MiB case came within 7 s of the timeout on a h
 
 - No `AI` binding or `GEMMA_MODEL`: `SERVICE_UNAVAILABLE`, never mock extraction.
 - Model reply that is not exactly the contract JSON: `SERVICE_UNAVAILABLE`, `retryable: true`. Only the reason is logged, never the reply.
+- After an exact Greenbook match, the product page is read once for the manufacturer details. If that fails, the verified result is returned without them. They are shown, not compared.
 - `REFERENCE_MODE=demo`: fictional fixtures only, labelled `DEMO_FIXTURE` and `authoritative: false`.
 - Fixture miss: `SOURCE_UNAVAILABLE`, never `NOT_FOUND`. `NOT_FOUND` is reserved for a real live lookup.
 - `REFERENCE_MODE=authorized_live` with `GREENBOOK_ACCESS_BASIS` set: experimental, low-volume lookups against NAFDAC's public Greenbook, not endorsed by NAFDAC. See [docs/greenbook-access.md](../../docs/greenbook-access.md). Without the basis, nothing is sent. Failures return `SOURCE_UNAVAILABLE`, never fixtures.

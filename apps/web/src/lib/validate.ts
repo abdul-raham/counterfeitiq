@@ -45,7 +45,7 @@ function isMedicineRecord(value: unknown): boolean {
     && isNullableString(value.strength)
     && isStringArray(value.ingredients)
     && isNullableString(value.registrationExpiry)
-    && [value.applicant, value.packSize, value.registrationStatus, value.productCategory, value.dosageForm, value.route, value.approvalDate].every(isOptionalText);
+    && [value.applicant, value.listedManufacturer, value.manufacturerCountry, value.composition, value.atcCode, value.marketingCategory, value.packSize, value.registrationStatus, value.productCategory, value.dosageForm, value.route, value.approvalDate].every(isOptionalText);
 }
 
 // Provenance rules are checked at runtime because they are what stops a demo

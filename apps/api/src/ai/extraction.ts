@@ -17,7 +17,7 @@ Reply with one JSON object and nothing else, using exactly these keys:
 category, productName, brand, nafdacNumber, manufacturer, strength, ingredients, batchNumber, manufacturingDate, expiryDate.
 
 Rules:
-- category must be one of: medicine, food, cosmetic, other. Vaccines and herbal medicines are medicine.
+- category must be one of: medicine, medical device, food, cosmetic, other. Vaccines and herbal medicines are medicine. Sanitary pads, diapers, test kits and similar health products are medical device.
 - ingredients is an array of strings. Every other value is a string or null.
 - Copy values exactly as printed. Never guess, infer or complete anything that is not clearly visible.
 - Use null, or an empty array for ingredients, when a value is missing or unreadable.
@@ -42,7 +42,7 @@ const TEXT_FIELDS = [
 const REQUIRED_KEYS = ['category', 'ingredients', ...TEXT_FIELDS];
 const OPTIONAL_TEXT_FIELDS = ['dosageForm', 'packSize', 'directions', 'storage'] as const;
 const CONTRACT_KEYS = new Set<string>([...REQUIRED_KEYS, ...OPTIONAL_TEXT_FIELDS, 'printedWarnings']);
-const CATEGORIES = new Set(['medicine', 'food', 'cosmetic', 'other']);
+const CATEGORIES = new Set(['medicine', 'medical device', 'food', 'cosmetic', 'other']);
 const EMPTY_VALUES = new Set(['', 'null', 'none', 'n/a', 'na', 'unknown', 'not visible', 'unreadable', '-']);
 const RATE_LIMIT_PATTERN = /\b(?:429|3036|3040|4006)\b|rate limit|too many requests|capacity|daily free allocation/i;
 const FENCED_REPLY = /^```(?:json)?\s*\n([\s\S]*)\n```$/;

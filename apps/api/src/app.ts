@@ -50,7 +50,7 @@ export function createDependencies(env: Env = {}): AnalyzeDependencies {
   const referenceAdapter = createReferenceAdapter({
     mode: env.REFERENCE_MODE,
     greenbookAccessBasis: env.GREENBOOK_ACCESS_BASIS,
-    greenbook: { limiter: env.GREENBOOK_LIMITER },
+    greenbook: { limiter: env.GREENBOOK_LIMITER, readProductPage: true },
   });
 
   return {

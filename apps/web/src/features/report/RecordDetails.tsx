@@ -18,7 +18,11 @@ export function RecordDetails({ record }: { record: MedicineReference }) {
       <Row label="NAFDAC number" value={record.nafdacNumber} />
       <Row label="Applicant" value={record.applicant} />
       <Row label="Status" value={record.registrationStatus} />
-      <Row label="Manufacturer" value={record.manufacturer} />
+      <Row label="Manufacturer" value={record.listedManufacturer ?? record.manufacturer} />
+      <Row label="Manufacturer country" value={record.manufacturerCountry} />
+      <Row label="Composition" value={record.composition} />
+      <Row label="ATC code" value={record.atcCode} />
+      <Row label="Marketing category" value={record.marketingCategory} />
       <Row label="Category" value={record.productCategory} />
       <Row label="Form" value={record.dosageForm} />
       <Row label="Route" value={record.route} />
