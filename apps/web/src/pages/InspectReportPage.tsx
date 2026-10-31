@@ -6,24 +6,24 @@ import { Report } from '../features/report/Report';
 import { describeOutcome } from '../features/report/outcome';
 import { useScan } from '../features/scanner/ScanContext';
 
-export function ReportPage() {
+export function InspectReportPage() {
   const navigate = useNavigate();
   const { result, previewUrl, reset } = useScan();
 
   // Reports are never stored, so a refresh or direct visit has nothing to show.
-  if (!result) return <Navigate to="/scan" replace />;
+  if (!result) return <Navigate to="/inspect" replace />;
 
   const { suggestRetake } = describeOutcome(result);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-12">
-      <PageHeading title="Your report" />
+      <PageHeading title="Packaging report" />
       <Report response={result} imageUrl={previewUrl} />
       <div className="mt-10 flex flex-col gap-3 border-t border-line pt-6 sm:flex-row">
         <Button
           onClick={() => {
             reset();
-            navigate('/scan');
+            navigate('/inspect');
           }}
         >
           <Camera aria-hidden="true" className="size-5" />

@@ -32,7 +32,7 @@ export function Layout() {
           Skip to content
         </a>
         {isSampleMode() && <Suspense fallback={null}><SampleBanner /></Suspense>}
-        <header className="border-b border-line bg-surface">
+        <header className="no-print border-b border-line bg-surface">
           <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
             <Link to="/" className="flex items-center gap-2 rounded-md font-semibold tracking-tight">
               <ScanLine aria-hidden="true" className="size-5" strokeWidth={2} />
@@ -40,16 +40,18 @@ export function Layout() {
             </Link>
             <nav aria-label="Main" className="flex items-center">
               <NavLink to="/scan" className={navClass}>Scan</NavLink>
-              <NavLink to="/lookup" className={navClass}>Look up</NavLink>
+              <NavLink to="/inspect" className={navClass}>Inspect</NavLink>
+              <NavLink to="/help" className={navClass}>Help</NavLink>
             </nav>
           </div>
         </header>
         <main id="main" className="flex-1">
           <ErrorBoundary key={pathname}><Outlet /></ErrorBoundary>
         </main>
-        <footer className="border-t border-line">
-          <div className="mx-auto flex max-w-5xl flex-col gap-1 px-4 py-6 text-sm text-muted sm:flex-row sm:justify-between sm:px-6">
-            <p>CounterfeitIQ gives evidence, not a guarantee. It is not affiliated with or endorsed by NAFDAC.</p>
+        <footer className="no-print border-t border-line">
+          <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-6 text-sm text-muted sm:flex-row sm:items-center sm:gap-6 sm:px-6">
+            <p className="sm:mr-auto">CounterfeitIQ gives evidence, not a guarantee. It is not affiliated with or endorsed by NAFDAC.</p>
+            <Link to="/manufacturer/login" className="rounded-sm underline underline-offset-4 hover:text-ink">For manufacturers</Link>
             <a
               href="https://github.com/abdul-raham/counterfeitiq"
               className="rounded-sm underline underline-offset-4 hover:text-ink"
