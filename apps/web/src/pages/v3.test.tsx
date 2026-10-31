@@ -121,12 +121,12 @@ describe('scanning', () => {
 });
 
 describe('product result', () => {
-  it('shows product and manufacturer, and labels a demo record prominently', async () => {
+  it('shows product and manufacturer, and names a simulated source', async () => {
     serve(found);
     const { container } = renderAt('/product/2000000001012');
     expect(await screen.findByText('Demozol 500 mg Tablets')).toBeInTheDocument();
     expect(screen.getByText('Fictional Labs Nigeria Ltd')).toBeInTheDocument();
-    expect(screen.getByText('Demo record: fictional company and product')).toBeInTheDocument();
+    expect(screen.getByText(/Source: Simulated manufacturer ERP/)).toBeInTheDocument();
     expect(screen.getByText(found.explanation)).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Batch' })).not.toBeInTheDocument();
     const { violations } = await axe.run(container, { rules: { 'color-contrast': { enabled: false } } });
@@ -146,7 +146,7 @@ describe('product result', () => {
     serve({ ...found, sources: [{ ...demoSource, sourceType: 'MANUFACTURER_API', sourceName: 'Example ERP', isDemo: false }] });
     renderAt('/product/x-real');
     expect(await screen.findByText(/Source: Example ERP/)).toBeInTheDocument();
-    expect(screen.queryByText(/Demo record/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Simulated/)).not.toBeInTheDocument();
   });
 
   it('shows no repeat notice on a first scan', async () => {
