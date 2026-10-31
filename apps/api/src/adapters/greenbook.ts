@@ -5,12 +5,12 @@ import { canonicalNafdacNumber, INVALID_NUMBER_NOTE, notExecuted, type Reference
 export const GREENBOOK_URL = 'https://greenbook.nafdac.gov.ng/';
 
 const USER_AGENT = 'CounterfeitIQ/0.1 (+https://github.com/abdul-raham/counterfeitiq)';
-const TIMEOUT_MS = 8_000;
+const DEFAULT_TIMEOUT_MS = 8_000;
 // The site's own table asks for 10 rows, and it is the size that has been verified.
 const PAGE_LENGTH = 10;
 
-const FOUND_TTL_MS = 6 * 60 * 60 * 1000;
-const NOT_FOUND_TTL_MS = 60 * 60 * 1000;
+const DEFAULT_FOUND_TTL_MS = 6 * 60 * 60 * 1000;
+const DEFAULT_NOT_FOUND_TTL_MS = 60 * 60 * 1000;
 const MAX_CACHE_ENTRIES = 500;
 
 const MAX_REQUESTS_PER_MINUTE = 30;
@@ -69,6 +69,9 @@ export function createGreenbookState(): GreenbookState {
 const isolateState = createGreenbookState();
 
 export interface GreenbookOptions {
+  timeoutMs?: number;
+  foundTtlMs?: number;
+  notFoundTtlMs?: number;
   fetch?: typeof fetch;
   limiter?: RateLimiter;
   now?: () => Date;
@@ -226,19 +229,29 @@ function withinIsolateBudget(state: GreenbookState, nowMs: number): boolean {
   return true;
 }
 
-function remember(state: GreenbookState, key: string, result: ReferenceLookupResult, nowMs: number): void {
+function remember(
+  state: GreenbookState,
+  key: string,
+  result: ReferenceLookupResult,
+  nowMs: number,
+  ttls: { found: number; notFound: number },
+): void {
   if (result.status === 'SOURCE_UNAVAILABLE') return;
   if (!state.cache.has(key) && state.cache.size >= MAX_CACHE_ENTRIES) {
     const oldest = state.cache.keys().next().value;
     if (oldest !== undefined) state.cache.delete(oldest);
   }
-  const ttl = result.status === 'FOUND' ? FOUND_TTL_MS : NOT_FOUND_TTL_MS;
+  const ttl = result.status === 'FOUND' ? ttls.found : ttls.notFound;
   state.cache.set(key, { result, expiresAt: nowMs + ttl });
 }
 
 /** The live NAFDAC Greenbook. Failures are returned as results, never thrown. */
 export function createGreenbookAdapter(options: GreenbookOptions = {}): ReferenceAdapter {
   const state = options.state ?? isolateState;
+  const ttls = {
+    found: options.foundTtlMs ?? DEFAULT_FOUND_TTL_MS,
+    notFound: options.notFoundTtlMs ?? DEFAULT_NOT_FOUND_TTL_MS,
+  };
   const now = options.now ?? (() => new Date());
   const send = options.fetch ?? ((input, init) => fetch(input, init));
 
@@ -246,7 +259,7 @@ export function createGreenbookAdapter(options: GreenbookOptions = {}): Referenc
     const started = now();
     const requestedAt = started.toISOString();
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
 
     let raw: unknown;
     try {
@@ -279,7 +292,7 @@ export function createGreenbookAdapter(options: GreenbookOptions = {}): Referenc
     const page = parseSearchPage(raw);
     if (!page) return unavailable(requestedAt, NOTES.malformed);
     const result = interpretPage(page, key, requestedAt);
-    remember(state, key, result, started.getTime());
+    remember(state, key, result, started.getTime(), ttls);
     return result;
   }
 

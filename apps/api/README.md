@@ -64,6 +64,8 @@ There are no real secrets: the `AI` binding authenticates through the Cloudflare
 | `REFERENCE_MODE` | `.env` | `demo` or `authorized_live` |
 | `GREENBOOK_LIMITER` | Binding | 10 Greenbook requests per minute |
 | `GREENBOOK_ACCESS_BASIS` | `.env` | Why live requests are made; empty sends nothing |
+| `MODEL_TIMEOUT_MS`, `MODEL_MAX_TOKENS` | `.env` | Optional; defaults 30000 and 1000 |
+| `GREENBOOK_TIMEOUT_MS`, `GREENBOOK_FOUND_TTL_MS`, `GREENBOOK_NOT_FOUND_TTL_MS` | `.env` | Optional; defaults 8 s, 6 h and 1 h |
 | `ALLOWED_ORIGINS` | `.env` | Comma-separated exact origins; must include the production web origin |
 
 The web app needs `VITE_API_BASE_URL` set to the Worker URL.

@@ -10,6 +10,7 @@ export interface ExtractionOptions {
   ai?: VisionModel;
   model?: string;
   timeoutMs?: number;
+  maxTokens?: number;
 }
 
 export const EXTRACTION_PROMPT = `Read the text visible on this product packaging photo.
@@ -118,7 +119,7 @@ function replyText(result: unknown): string {
   return content;
 }
 
-async function runModel(ai: VisionModel, model: string, dataUri: string, timeoutMs: number): Promise<unknown> {
+async function runModel(ai: VisionModel, model: string, dataUri: string, timeoutMs: number, maxTokens: number): Promise<unknown> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_resolve, reject) => {
     timer = setTimeout(() => reject(new AnalysisApiError({
@@ -138,7 +139,7 @@ async function runModel(ai: VisionModel, model: string, dataUri: string, timeout
             { type: 'image_url', image_url: { url: dataUri } },
           ],
         }],
-        max_tokens: 1000,
+        max_tokens: maxTokens,
         temperature: 0,
         // With thinking on, the model spends the whole token budget on reasoning.
         chat_template_kwargs: { enable_thinking: false },
@@ -180,6 +181,6 @@ export async function extractProduct(image: Blob, options: ExtractionOptions = {
     });
   }
 
-  const result = await runModel(options.ai, options.model, `data:${type};base64,${toBase64(bytes)}`, options.timeoutMs ?? 30_000);
+  const result = await runModel(options.ai, options.model, `data:${type};base64,${toBase64(bytes)}`, options.timeoutMs ?? 30_000, options.maxTokens ?? 1000);
   return parseModelOutput(replyText(result));
 }

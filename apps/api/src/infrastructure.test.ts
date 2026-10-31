@@ -205,6 +205,23 @@ describe('provider failures', () => {
   });
 });
 
+describe('tuning from the environment', () => {
+  const sentTokens = (ai: ReturnType<typeof modelReturning>) =>
+    (ai.run.mock.calls[0] as unknown as [string, { max_tokens: number }])[1].max_tokens;
+
+  it('sends the configured token limit', async () => {
+    const ai = modelReturning(JSON.stringify(readable));
+    await handleRequest(upload(JPEG), envWith(ai, { MODEL_MAX_TOKENS: '600' }));
+    expect(sentTokens(ai)).toBe(600);
+  });
+
+  it.each(['', 'abc', '0', '-5'])('falls back to the default for "%s"', async (value) => {
+    const ai = modelReturning(JSON.stringify(readable));
+    await handleRequest(upload(JPEG), envWith(ai, { MODEL_MAX_TOKENS: value }));
+    expect(sentTokens(ai)).toBe(1000);
+  });
+});
+
 describe('reference numbers', () => {
   it.each(['A1-123456', 'a1-123456', ' A1-123456 ', 'A1 123456', 'A1–123456', 'NAFDAC REG NO: A1-123456'])(
     'matches the same number written as "%s"', async (number) => {

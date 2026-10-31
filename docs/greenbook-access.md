@@ -110,7 +110,7 @@ npm run deploy --workspace @counterfeitiq/api
 npm run deploy --workspace @counterfeitiq/api
 ```
 
-The endpoint, 8 second timeout, cache lifetimes and request limits are constants at the top of `apps/api/src/adapters/greenbook.ts`, so they are changed in code rather than by configuration. Only the official origin is used.
+The timeout and cache lifetimes can be set in `apps/api/.env`. The endpoint and request limits stay constants in `apps/api/src/adapters/greenbook.ts`, so configuration cannot point lookups at another site or raise the load on NAFDAC. Only the official origin is used.
 
 ## Smoke test
 

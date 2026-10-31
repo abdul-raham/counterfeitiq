@@ -17,6 +17,11 @@ export interface Env {
   GREENBOOK_ACCESS_BASIS?: string;
   GREENBOOK_LIMITER?: RateLimiter;
   ALLOWED_ORIGINS?: string;
+  MODEL_TIMEOUT_MS?: string;
+  MODEL_MAX_TOKENS?: string;
+  GREENBOOK_TIMEOUT_MS?: string;
+  GREENBOOK_FOUND_TTL_MS?: string;
+  GREENBOOK_NOT_FOUND_TTL_MS?: string;
   ANALYZE_LIMITER?: RequestLimiter;
   REFERENCE_LIMITER?: RequestLimiter;
 }
@@ -46,11 +51,22 @@ export function withCors(response: Response, cors: Record<string, string>): Resp
   });
 }
 
+/** A positive number from the environment. Anything else is undefined, so the code default applies. */
+function positiveNumber(value: string | undefined): number | undefined {
+  const number = Number(value);
+  return value?.trim() && Number.isFinite(number) && number > 0 ? number : undefined;
+}
+
 export function createDependencies(env: Env = {}): AnalyzeDependencies {
   const referenceAdapter = createReferenceAdapter({
     mode: env.REFERENCE_MODE,
     greenbookAccessBasis: env.GREENBOOK_ACCESS_BASIS,
-    greenbook: { limiter: env.GREENBOOK_LIMITER },
+    greenbook: {
+      limiter: env.GREENBOOK_LIMITER,
+      timeoutMs: positiveNumber(env.GREENBOOK_TIMEOUT_MS),
+      foundTtlMs: positiveNumber(env.GREENBOOK_FOUND_TTL_MS),
+      notFoundTtlMs: positiveNumber(env.GREENBOOK_NOT_FOUND_TTL_MS),
+    },
   });
 
   return {
@@ -58,6 +74,8 @@ export function createDependencies(env: Env = {}): AnalyzeDependencies {
       extractProduct(image, {
         ai: env.AI,
         model: env.GEMMA_MODEL,
+        timeoutMs: positiveNumber(env.MODEL_TIMEOUT_MS),
+        maxTokens: positiveNumber(env.MODEL_MAX_TOKENS),
       }),
     lookupMedicine: (number: string) => referenceAdapter.lookupMedicine(number),
   };
