@@ -289,14 +289,14 @@ describe('repeat scans', () => {
     serve(sameDevice);
     renderAt('/product/x-rescan');
     expect(await screen.findByText(/likely your own rescan/)).toBeInTheDocument();
-    expect(screen.queryByText(/scratch this panel/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/previously scratched/)).not.toBeInTheDocument();
   });
 
   it('asks about the panel for a scan from elsewhere, and never says fake', async () => {
     serve(elsewhere);
     const { container } = renderAt('/product/x-elsewhere');
     expect(await screen.findByText('This pack code has been scanned 2 times before')).toBeInTheDocument();
-    expect(screen.getByText('Did you scratch this panel yourself?')).toBeInTheDocument();
+    expect(screen.getByText('Was this panel previously scratched by you?')).toBeInTheDocument();
     expect(container.textContent).not.toMatch(/fake/i);
     expect((await axe.run(container, { rules: { 'color-contrast': { enabled: false } } })).violations.map((item) => item.id)).toEqual([]);
   });
@@ -304,20 +304,21 @@ describe('repeat scans', () => {
   it('calls an intact panel a high-risk duplicate, without calling it fake', async () => {
     serve(elsewhere);
     const { container } = renderAt('/product/x-intact');
-    await user.click(await screen.findByRole('button', { name: "I've scratched it" }));
+    await user.click(await screen.findByRole('button', { name: "No, I didn't" }));
     expect(screen.getByText('High-risk duplicate')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Yes' }));
     expect(screen.getByText('Do not use this pack')).toBeInTheDocument();
     expect(container.textContent).not.toMatch(/fake/i);
   });
 
-  it('sends a scratched panel to the seller', async () => {
+  it('raises no flag when the panel was scratched by this user earlier', async () => {
     serve(elsewhere);
-    renderAt('/product/x-scratched');
-    await user.click(await screen.findByRole('button', { name: "I haven't, it came scratched" }));
-    expect(screen.getByText('Repeated scan: ask the seller about this pack')).toBeInTheDocument();
+    renderAt('/product/x-mine');
+    await user.click(await screen.findByRole('button', { name: 'Yes, I scratched it earlier' }));
+    expect(screen.getByText('This is likely your own earlier scan')).toBeInTheDocument();
+    expect(screen.queryByText('High-risk duplicate')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Yes' }));
-    expect(screen.getByText('The details match, but ask the seller about the earlier scan')).toBeInTheDocument();
+    expect(screen.getByText("The details match the manufacturer's record")).toBeInTheDocument();
   });
 
   it('holds the final result until the panel question is answered', async () => {

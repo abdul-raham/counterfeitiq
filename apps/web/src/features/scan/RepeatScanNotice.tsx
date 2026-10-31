@@ -3,7 +3,7 @@ import { Button } from '../../components/Button';
 import { StatusMessage } from '../../components/StatusMessage';
 import type { ScanSignal } from '../../lib/v3/contract';
 
-export type PanelAnswer = 'intact' | 'scratched';
+export type PanelAnswer = 'mine' | 'notMine';
 
 function formatDateTime(value: string): string {
   const date = new Date(value);
@@ -21,8 +21,8 @@ interface RepeatScanNoticeProps {
 
 /**
  * The code sits under a scratch panel, so nobody should have read it before that panel was
- * scratched. A scan from this device alone is likely a rescan. A scan from elsewhere depends on
- * who scratched this panel.
+ * scratched. A scan from this device alone is likely a rescan. A scan from elsewhere is yours only
+ * if you scratched this panel earlier. Otherwise someone else read the code first.
  */
 export function RepeatScanNotice({ care, signal, scannedOnlyHere, answer, onAnswer, reportLink }: RepeatScanNoticeProps) {
   const previous = signal.totalScans - 1;
@@ -42,22 +42,23 @@ export function RepeatScanNotice({ care, signal, scannedOnlyHere, answer, onAnsw
         It was scanned on another device, first on {formatDateTime(signal.firstSeenAt)}.
         {!answer && (
           <div className="mt-3">
-            <p className="font-medium">Did you scratch this panel yourself?</p>
+            <p className="font-medium">Was this panel previously scratched by you?</p>
+            <p className="mt-0.5 text-muted">Choose No if you only just scratched it, or it came scratched.</p>
             <div className="mt-2 flex flex-wrap gap-2">
-              <Button variant="secondary" onClick={() => onAnswer('intact')}>I've scratched it</Button>
-              <Button variant="secondary" onClick={() => onAnswer('scratched')}>I haven't, it came scratched</Button>
+              <Button variant="secondary" onClick={() => onAnswer('mine')}>Yes, I scratched it earlier</Button>
+              <Button variant="secondary" onClick={() => onAnswer('notMine')}>No, I didn't</Button>
             </div>
           </div>
         )}
       </StatusMessage>
-      {answer === 'intact' && (
+      {answer === 'notMine' && (
         <StatusMessage tone="risk" title="High-risk duplicate" role="alert">
-          You scratched this panel yourself, but the code under it was already scanned elsewhere, so it may have been copied onto this pack. Do not use this product. {care} <Link to={reportLink} className="underline underline-offset-4">See how to report a concern</Link>.
+          You didn't scratch this panel earlier, but the code under it was already scanned on another device, so it may have been copied onto this pack. Do not use this product. {care} <Link to={reportLink} className="underline underline-offset-4">See how to report a concern</Link>.
         </StatusMessage>
       )}
-      {answer === 'scratched' && (
-        <StatusMessage tone="warn" title="Repeated scan: ask the seller about this pack" role="status">
-          It came scratched, so we can't tell who scanned it or why. Ask the seller, and don't use it until you have an answer.
+      {answer === 'mine' && (
+        <StatusMessage tone="neutral" title="This is likely your own earlier scan" role="status">
+          You scratched this panel earlier, so the other scan was probably you on another device.
         </StatusMessage>
       )}
     </div>

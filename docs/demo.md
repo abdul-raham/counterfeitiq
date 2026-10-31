@@ -31,7 +31,7 @@ Each code on `/demo` also has an "Open result" link, if a camera fails on stage.
 2. **Scan the product code:** show the product and the manufacturer, and say that this comes from a simulated system. Say that this code identifies the product type, so every pack shares it.
 3. **Scan the serialized pack:** show the batch and pack details.
 4. **Check the package:** tap "No" on the checklist, and tick what differs. That tells us exactly which detail conflicted.
-5. **Scan the same pack from a second phone:** answer "Did you scratch this panel yourself?". "I've scratched it" is a high-risk duplicate. "I haven't, it came scratched" goes to the seller. The same device again is treated as a likely rescan.
+5. **Scan the same pack from a second phone:** answer "Was this panel previously scratched by you?". "Yes" is likely your own scan. "No" is a high-risk duplicate. The same device again is treated as a likely rescan.
 6. **Scan the recalled batch:** show the warning.
 7. **Scan the fake pack:** the product is real, but the manufacturer never issued that serial number. Show "This QR code is fake", and say why: only a connected manufacturer's packs carry these QR codes, so someone made this one.
 8. **Optional, Inspect packaging:** upload a photo of a pack, and show what Gemma read and how it compares with the registration record.

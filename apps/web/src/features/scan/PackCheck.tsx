@@ -47,7 +47,7 @@ function FinalResult({ care, isMedicine, match, mismatches, panel, hasSeriousWar
       </StatusMessage>
     );
   }
-  if (panel === 'intact') {
+  if (panel === 'notMine') {
     return (
       <StatusMessage tone="risk" title="Do not use this pack" role="status">
         Whatever the package says, its hidden code was already scanned elsewhere. {care} {report}.
@@ -58,13 +58,6 @@ function FinalResult({ care, isMedicine, match, mismatches, panel, hasSeriousWar
     return (
       <StatusMessage tone="warn" title={`Ask ${isMedicine ? 'a pharmacist' : 'the seller'} to compare`} role="status">
         Show them this page and the package before using it.
-      </StatusMessage>
-    );
-  }
-  if (panel === 'scratched') {
-    return (
-      <StatusMessage tone="warn" title="The details match, but ask the seller about the earlier scan" role="status">
-        Don't use it until you have an answer.
       </StatusMessage>
     );
   }
