@@ -338,7 +338,7 @@ describe('demo codes', () => {
     const fetchMock = serve(found);
     renderAt('/demo');
     expect(screen.getByText(/Every company and product here is fictional/)).toBeInTheDocument();
-    await user.click(screen.getByRole('link', { name: 'Product code' }));
+    await user.click(screen.getByRole('link', { name: 'Open result: Product code' }));
     await screen.findByText('Demozol 500 mg Tablets');
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain('identifier=2000000001012');
   });
