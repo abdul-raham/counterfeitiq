@@ -4,6 +4,7 @@ import { extractProduct, type VisionModel } from './ai/extraction';
 import { analyzeRequest, type AnalyzeDependencies } from './routes/analyze';
 import { apiErrorResponse } from './routes/errors';
 import { referenceRequest } from './routes/reference';
+import { resolveRequest } from './v3/resolve';
 
 interface RequestLimiter {
   limit(options: { key: string }): Promise<{ success: boolean }>;
@@ -105,6 +106,12 @@ async function route(request: Request, url: URL, env: Env): Promise<Response> {
     if (request.method !== 'POST') return new Response(null, { status: 405, headers: { Allow: 'POST' } });
     if (!(await withinLimit(env.ANALYZE_LIMITER, request))) return rateLimited();
     return analyzeRequest(request, deps);
+  }
+
+  if (pathname === '/api/v3/resolve') {
+    if (request.method !== 'POST') return new Response(null, { status: 405, headers: { Allow: 'POST' } });
+    if (!(await withinLimit(env.REFERENCE_LIMITER, request))) return rateLimited();
+    return resolveRequest(request);
   }
 
   if (pathname.startsWith('/api/reference/')) {
