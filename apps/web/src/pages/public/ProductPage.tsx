@@ -29,10 +29,12 @@ const MANUFACTURER_SOURCES = new Set<Provenance['sourceType']>(['SIMULATED_ERP',
  * Only a connected manufacturer's codes go into a CounterfeitIQ QR code, so one its records don't
  * hold was not issued by it. A source that could not answer is never enough to say this.
  */
-function isFakeQrCode({ outcome, warnings, identifier, batch, sources }: ProductReport): boolean {
+function isFakeQrCode({ outcome, warnings, identifier, batch, product, sources }: ProductReport): boolean {
   if (outcome === 'NOT_FOUND' || outcome === 'INVALID_IDENTIFIER') return true;
   if (outcome !== 'RESOLVED') return false;
   if (warnings.some((warning) => warning.code === 'SERIAL_NOT_FOUND')) return true;
+  // No batch means no parent record that a pack could have come from.
+  if (product?.batchCount === 0) return true;
   return Boolean(identifier.batchNumber) && !batch
     && sources.some((source) => MANUFACTURER_SOURCES.has(source.sourceType) && source.retrievalStatus === 'NOT_FOUND');
 }

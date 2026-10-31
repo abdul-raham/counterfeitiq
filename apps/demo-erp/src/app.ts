@@ -30,7 +30,7 @@ export async function handleRequest(request: Request, env: Env = {}): Promise<Re
   if (version === 'v1' && resource === 'products' && gtin) {
     if (parts.length === 3) {
       const found = ITEMS.find((item) => item.gtin === gtin);
-      return found ? envelope(found) : fail(404, 'No such item.');
+      return found ? envelope({ ...found, batch_count: LOTS.filter((lot) => lot.gtin === gtin).length }) : fail(404, 'No such item.');
     }
     if (parts.length === 5 && child === 'batches') {
       const found = LOTS.find((lot) => lot.gtin === gtin && lot.lot_no === key);

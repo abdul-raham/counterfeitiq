@@ -233,6 +233,18 @@ describe('product result', () => {
     expect(screen.queryByText('This QR code is fake')).not.toBeInTheDocument();
   });
 
+  it('calls a QR code fake when its product has no batch, because it has no parent', async () => {
+    serve({ ...found, product: { ...found.product!, batchCount: 0 } });
+    const first = renderAt('/product/qr-orphan?qr=1');
+    expect(await screen.findByText('This QR code is fake')).toBeInTheDocument();
+    first.unmount();
+
+    serve({ ...found, product: { ...found.product!, batchCount: 2 } });
+    renderAt('/product/qr-parent?qr=1');
+    expect(await screen.findByText('Demozol 500 mg Tablets')).toBeInTheDocument();
+    expect(screen.queryByText('This QR code is fake')).not.toBeInTheDocument();
+  });
+
   it('never calls a typed code fake', async () => {
     serve({ ...found, warnings: [{ code: 'SERIAL_NOT_FOUND', explanation: 'The source has no pack with this serial number.' }] });
     renderAt('/product/typed-serial');
