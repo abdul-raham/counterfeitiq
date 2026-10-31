@@ -20,6 +20,20 @@ export interface LookupOptions {
   now?: () => Date;
 }
 
+export interface ReferenceAdapter {
+  lookupMedicine(nafdacNumber: string): Promise<ReferenceLookupResult>;
+}
+
+export type ReferenceMode = NonNullable<LookupOptions['mode']>;
+
+export function createReferenceAdapter(
+  options: LookupOptions = {},
+): ReferenceAdapter {
+  return {
+    lookupMedicine: (nafdacNumber: string) => lookupMedicine(nafdacNumber, options),
+  };
+}
+
 export async function lookupMedicine(
   nafdacNumber: string,
   options: LookupOptions = {},
